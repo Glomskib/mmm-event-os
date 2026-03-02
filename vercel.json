@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/weekly-ride-email",
       "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/cron/social-drafts",
+      "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/social-publish",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

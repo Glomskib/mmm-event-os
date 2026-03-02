@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/button";
 export function ApprovalActions({
   id,
   status,
+  type,
+  hasError,
 }: {
   id: string;
   status: string;
+  type?: string;
+  hasError?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
@@ -108,7 +112,11 @@ export function ApprovalActions({
               onClick={() => handleAction("send")}
               disabled={loading !== null}
             >
-              {loading === "send" ? "Sending..." : "Send Now"}
+              {loading === "send"
+                ? "Sending..."
+                : hasError && type === "social_post"
+                  ? "Retry Publish"
+                  : "Send Now"}
             </Button>
             <Button
               variant="destructive"
@@ -117,6 +125,25 @@ export function ApprovalActions({
             >
               {loading === "reject" ? "Rejecting..." : "Reject Instead"}
             </Button>
+          </>
+        )}
+
+        {status === "scheduled" && type === "social_post" && (
+          <>
+            {hasError && (
+              <Button
+                variant="outline"
+                onClick={() => handleAction("send")}
+                disabled={loading !== null}
+              >
+                {loading === "send" ? "Retrying..." : "Retry Publish"}
+              </Button>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {hasError
+                ? "Last publish attempt failed. You can retry now."
+                : "Scheduled — the cron will publish this automatically."}
+            </p>
           </>
         )}
 

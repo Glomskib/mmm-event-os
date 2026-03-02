@@ -31,7 +31,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Approval not found" }, { status: 404 });
   }
 
-  if (approval.status !== "approved") {
+  const allowedStatuses =
+    approval.type === "social_post"
+      ? ["approved", "scheduled"]
+      : ["approved"];
+
+  if (!allowedStatuses.includes(approval.status)) {
     return NextResponse.json(
       { error: `Cannot send — current status is '${approval.status}'. Must be 'approved' first.` },
       { status: 400 }
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    writeSystemLog("late:publish-attempt", `Publishing: ${approval.title}`, {
+    writeSystemLog("late:publish_attempt", `Publishing: ${approval.title}`, {
       approvalId: id,
       channels: Object.keys(channelTargets).filter((k) => channelTargets[k]),
       publishedBy: admin.id,
@@ -150,7 +155,7 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", id);
 
-      writeSystemLog("approval:publish", `Published: ${approval.title}`, {
+      writeSystemLog("late:publish_success", `Published: ${approval.title}`, {
         approvalId: id,
         postId: result.postId,
         publishedBy: admin.id,
@@ -168,7 +173,7 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", id);
 
-    writeSystemLog("approval:publish-fail", `Failed: ${approval.title}`, {
+    writeSystemLog("late:publish_fail", `Failed: ${approval.title}`, {
       approvalId: id,
       error: result.error,
       publishedBy: admin.id,

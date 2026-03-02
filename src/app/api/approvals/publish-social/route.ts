@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (approval.status !== "approved") {
+  if (approval.status !== "approved" && approval.status !== "scheduled") {
     return NextResponse.json(
       {
-        error: `Cannot publish — current status is '${approval.status}'. Must be 'approved' first.`,
+        error: `Cannot publish — current status is '${approval.status}'. Must be 'approved' or 'scheduled'.`,
       },
       { status: 400 }
     );
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  writeSystemLog("late:publish-attempt", `Publishing: ${approval.title}`, {
+  writeSystemLog("late:publish_attempt", `Publishing: ${approval.title}`, {
     approvalId: id,
     channels: Object.keys(channelTargets).filter((k) => channelTargets[k]),
     publishedBy: admin.id,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", id);
 
-    writeSystemLog("approval:publish", `Published: ${approval.title}`, {
+    writeSystemLog("late:publish_success", `Published: ${approval.title}`, {
       approvalId: id,
       postId: result.postId,
       publishedBy: admin.id,
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", id);
 
-    writeSystemLog("approval:publish-fail", `Failed: ${approval.title}`, {
+    writeSystemLog("late:publish_fail", `Failed: ${approval.title}`, {
       approvalId: id,
       error: result.error,
       publishedBy: admin.id,

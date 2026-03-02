@@ -144,7 +144,12 @@ export default async function ApprovalDetailPage({
             )}
           </CardHeader>
           <CardContent>
-            <ApprovalActions id={approval.id} status={approval.status} />
+            <ApprovalActions
+              id={approval.id}
+              status={approval.status}
+              type={approval.type}
+              hasError={!!approval.error_message}
+            />
           </CardContent>
         </Card>
 
