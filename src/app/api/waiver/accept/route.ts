@@ -7,6 +7,7 @@ import {
   waiverHash,
   waiverText,
 } from "@/content/waiver/mmm_waiver_2026_v1";
+import { generateWaiverPdf } from "@/lib/waiver-pdf";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -112,6 +113,41 @@ export async function POST(request: Request) {
       { error: "Failed to create registration." },
       { status: 500 }
     );
+  }
+
+  // Generate waiver PDF and upload to storage
+  try {
+    const pdfBuffer = await generateWaiverPdf({
+      participantName: participant_name.trim(),
+      participantEmail: participant_email.trim(),
+      emergencyContactName: emergency_contact_name.trim(),
+      emergencyContactPhone: emergency_contact_phone.trim(),
+      waiverText,
+      waiverVersion,
+      signedAt: waiverAcceptedAt,
+      ip: waiverIp,
+    });
+
+    const storagePath = `${event.id}/${reg.id}.pdf`;
+
+    const { error: uploadError } = await admin.storage
+      .from("waivers")
+      .upload(storagePath, pdfBuffer, {
+        contentType: "application/pdf",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Failed to upload waiver PDF:", uploadError);
+    } else {
+      await admin
+        .from("registrations")
+        .update({ waiver_pdf_url: storagePath })
+        .eq("id", reg.id);
+    }
+  } catch (pdfErr) {
+    // PDF generation failure should not block registration
+    console.error("Waiver PDF generation failed:", pdfErr);
   }
 
   return NextResponse.json({
