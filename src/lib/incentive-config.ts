@@ -1,7 +1,10 @@
 /**
  * Per-event incentive banner configuration.
  * Each entry maps a title pattern to deadline + perks for the banner.
+ * eventSlug derived via slugify() to stay in sync with /events/[slug] routing.
  */
+
+import { slugify } from "./event-slug";
 
 export interface IncentiveConfig {
   pattern: RegExp;
@@ -21,7 +24,7 @@ export const INCENTIVE_CONFIGS: IncentiveConfig[] = [
       "Free 15-mile distance included",
       "Referral rewards: earn raffle tickets for every friend you bring",
     ],
-    eventSlug: "hhh-2026",
+    eventSlug: slugify("Houghton Hundred"),
   },
   {
     pattern: /Fun Friday Fifty/i,
@@ -32,7 +35,7 @@ export const INCENTIVE_CONFIGS: IncentiveConfig[] = [
       "Post-ride cookout included",
       "Refer a friend for bonus raffle entries",
     ],
-    eventSlug: "fff-2026",
+    eventSlug: slugify("Fun Friday Fifty"),
   },
 ];
 
