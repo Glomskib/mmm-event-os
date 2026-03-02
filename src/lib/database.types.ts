@@ -232,9 +232,13 @@ export type Database = {
           created_at: string
           distance: string
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           event_id: string
           id: string
           org_id: string
+          participant_email: string | null
+          participant_name: string | null
           referral_code: string | null
           status: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id: string | null
@@ -244,6 +248,8 @@ export type Database = {
           waiver_accepted: boolean
           waiver_accepted_at: string | null
           waiver_ip: string | null
+          waiver_pdf_url: string | null
+          waiver_snapshot_text: string | null
           waiver_user_agent: string | null
           waiver_text_hash: string | null
           waiver_version: string | null
@@ -253,9 +259,13 @@ export type Database = {
           created_at?: string
           distance: string
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           event_id: string
           id?: string
           org_id: string
+          participant_email?: string | null
+          participant_name?: string | null
           referral_code?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null
@@ -265,6 +275,8 @@ export type Database = {
           waiver_accepted?: boolean
           waiver_accepted_at?: string | null
           waiver_ip?: string | null
+          waiver_pdf_url?: string | null
+          waiver_snapshot_text?: string | null
           waiver_user_agent?: string | null
           waiver_text_hash?: string | null
           waiver_version?: string | null
@@ -274,9 +286,13 @@ export type Database = {
           created_at?: string
           distance?: string
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           event_id?: string
           id?: string
           org_id?: string
+          participant_email?: string | null
+          participant_name?: string | null
           referral_code?: string | null
           status?: Database["public"]["Enums"]["registration_status"]
           stripe_payment_intent_id?: string | null
@@ -286,6 +302,8 @@ export type Database = {
           waiver_accepted?: boolean
           waiver_accepted_at?: string | null
           waiver_ip?: string | null
+          waiver_pdf_url?: string | null
+          waiver_snapshot_text?: string | null
           waiver_user_agent?: string | null
           waiver_text_hash?: string | null
           waiver_version?: string | null

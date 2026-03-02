@@ -5,16 +5,41 @@ import { getPrice } from "@/lib/pricing";
 import {
   waiverVersion,
   waiverHash,
+  waiverText,
 } from "@/content/waiver/mmm_waiver_2026_v1";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
   const body = await request.json();
-  const { event_id, distance, referralCode } = body;
+  const {
+    event_id,
+    distance,
+    referralCode,
+    participant_name,
+    participant_email,
+    emergency_contact_name,
+    emergency_contact_phone,
+  } = body;
 
   if (!event_id || !distance) {
     return NextResponse.json(
       { error: "event_id and distance are required." },
+      { status: 400 }
+    );
+  }
+
+  // Validate participant + emergency fields
+  if (
+    !participant_name?.trim() ||
+    !participant_email?.trim() ||
+    !emergency_contact_name?.trim() ||
+    !emergency_contact_phone?.trim()
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Participant name, email, emergency contact name, and phone are required.",
+      },
       { status: 400 }
     );
   }
@@ -72,6 +97,11 @@ export async function POST(request: Request) {
       waiver_user_agent: waiverUserAgent,
       waiver_version: waiverVersion,
       waiver_text_hash: waiverHash,
+      waiver_snapshot_text: waiverText,
+      participant_name: participant_name.trim(),
+      participant_email: participant_email.trim(),
+      emergency_contact_name: emergency_contact_name.trim(),
+      emergency_contact_phone: emergency_contact_phone.trim(),
     })
     .select("id")
     .single();

@@ -33,6 +33,25 @@ export default function WaiverPage() {
   const [selectedDistance, setSelectedDistance] = useState(distanceParam);
   const [loading, setLoading] = useState(true);
 
+  // Participant + emergency contact fields
+  const [participantName, setParticipantName] = useState("");
+  const [participantEmail, setParticipantEmail] = useState("");
+  const [emergencyContactName, setEmergencyContactName] = useState("");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+
+  // Auto-fill from profile
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.full_name) setParticipantName(data.full_name);
+        if (data.email) setParticipantEmail(data.email);
+      })
+      .catch(() => {
+        // Not logged in or profile fetch failed — fields stay empty
+      });
+  }, []);
+
   useEffect(() => {
     if (!eventId) {
       setLoading(false);
@@ -77,9 +96,16 @@ export default function WaiverPage() {
     }
   }, [loading]);
 
+  const fieldsComplete =
+    participantName.trim() !== "" &&
+    participantEmail.trim() !== "" &&
+    emergencyContactName.trim() !== "" &&
+    emergencyContactPhone.trim() !== "";
+
   const canSubmit =
     hasScrolledToBottom &&
     isChecked &&
+    fieldsComplete &&
     !isSubmitting &&
     !!selectedDistance &&
     !!eventId;
@@ -97,6 +123,10 @@ export default function WaiverPage() {
           event_id: eventId,
           distance: selectedDistance,
           referralCode: referralCode || undefined,
+          participant_name: participantName.trim(),
+          participant_email: participantEmail.trim(),
+          emergency_contact_name: emergencyContactName.trim(),
+          emergency_contact_phone: emergencyContactPhone.trim(),
         }),
       });
 
@@ -211,6 +241,76 @@ export default function WaiverPage() {
             </div>
           )}
 
+          {/* Participant info */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Participant Information</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label htmlFor="participant-name" className="text-xs text-muted-foreground">
+                  Full Name *
+                </label>
+                <input
+                  id="participant-name"
+                  type="text"
+                  required
+                  value={participantName}
+                  onChange={(e) => setParticipantName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="participant-email" className="text-xs text-muted-foreground">
+                  Email *
+                </label>
+                <input
+                  id="participant-email"
+                  type="email"
+                  required
+                  value={participantEmail}
+                  onChange={(e) => setParticipantEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Emergency contact */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Emergency Contact</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label htmlFor="emergency-name" className="text-xs text-muted-foreground">
+                  Contact Name *
+                </label>
+                <input
+                  id="emergency-name"
+                  type="text"
+                  required
+                  value={emergencyContactName}
+                  onChange={(e) => setEmergencyContactName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="emergency-phone" className="text-xs text-muted-foreground">
+                  Contact Phone *
+                </label>
+                <input
+                  id="emergency-phone"
+                  type="tel"
+                  required
+                  value={emergencyContactPhone}
+                  onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Scrollable waiver text */}
           <div
             ref={scrollRef}
@@ -244,6 +344,13 @@ export default function WaiverPage() {
               Liability, and Indemnification Agreement.
             </span>
           </label>
+
+          {/* Signature timestamp preview */}
+          {isChecked && fieldsComplete && (
+            <p className="text-xs text-muted-foreground">
+              Signature recorded at: {new Date().toLocaleString()}
+            </p>
+          )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
