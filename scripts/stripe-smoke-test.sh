@@ -223,7 +223,7 @@ create_pending_reg() {
   "waiver_ip": "127.0.0.1",
   "waiver_user_agent": "smoke-test/1.0",
   "waiver_version": "2026-v1",
-  "waiver_text_hash": "df98a95d34e64e492298e4b270bee9a62ada89bebd81a2b52e5db6d67d16c43a",
+  "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
   "referral_code": $([ -n "$referral_code" ] && echo "\"${referral_code}\"" || echo "null"),
   "email": "${email}"
 }
@@ -507,7 +507,7 @@ REG_FREE_ID=$(sb_insert "registrations" "$(cat <<EOF
   "waiver_ip": "127.0.0.1",
   "waiver_user_agent": "smoke-test/1.0",
   "waiver_version": "2026-v1",
-  "waiver_text_hash": "df98a95d34e64e492298e4b270bee9a62ada89bebd81a2b52e5db6d67d16c43a",
+  "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
   "email": "free15@test.com"
 }
 EOF
