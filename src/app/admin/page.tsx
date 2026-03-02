@@ -24,6 +24,7 @@ import {
   Rocket,
   Handshake,
   Camera,
+  FileUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -155,6 +156,13 @@ const adminCards = [
     icon: Camera,
     href: "/admin/media",
     color: "text-primary",
+  },
+  {
+    title: "HHH Import",
+    description: "Import Shopify order CSV for HHH legacy leaderboard.",
+    icon: FileUp,
+    href: "/admin/hhh-import",
+    color: "text-emerald-700",
   },
 ];
 

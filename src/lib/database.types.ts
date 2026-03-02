@@ -365,6 +365,7 @@ export type Database = {
           matched_user_id: string | null
           matched_at: string | null
           notes: string | null
+          raw_json: Json | null
         }
         Insert: {
           id?: string
@@ -382,6 +383,7 @@ export type Database = {
           matched_user_id?: string | null
           matched_at?: string | null
           notes?: string | null
+          raw_json?: Json | null
         }
         Update: {
           id?: string
@@ -399,6 +401,7 @@ export type Database = {
           matched_user_id?: string | null
           matched_at?: string | null
           notes?: string | null
+          raw_json?: Json | null
         }
         Relationships: [
           {
