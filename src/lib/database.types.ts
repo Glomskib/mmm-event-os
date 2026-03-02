@@ -1237,7 +1237,17 @@ export type Database = {
       event_status: "draft" | "published" | "cancelled"
       media_entity_type: "event" | "ride_series" | "ride_occurrence" | "sponsor" | "page"
       media_kind: "image" | "video" | "embed"
-      media_placement: "hero" | "gallery" | "section" | "banner"
+      media_placement:
+        | "hero"
+        | "gallery"
+        | "section"
+        | "banner"
+        | "hero_secondary"
+        | "route_preview"
+        | "testimonial"
+        | "inline_section"
+        | "background_loop"
+        | "sponsor_showcase"
       raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event" | "early_bonus"
       registration_status:
         | "pending"
@@ -1388,7 +1398,7 @@ export const Constants = {
       event_status: ["draft", "published", "cancelled"],
       media_entity_type: ["event", "ride_series", "ride_occurrence", "sponsor", "page"],
       media_kind: ["image", "video", "embed"],
-      media_placement: ["hero", "gallery", "section", "banner"],
+      media_placement: ["hero", "gallery", "section", "banner", "hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase"],
       raffle_entry_source: ["shop_ride", "referral", "bonus", "event", "early_bonus"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],

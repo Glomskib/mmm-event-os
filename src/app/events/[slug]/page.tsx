@@ -15,10 +15,16 @@ import { getMarketingIncentive } from "@/lib/marketing-incentives";
 import { MarketingIncentiveBanner } from "@/components/marketing/event-incentive-banner";
 import { EventSocialProof } from "@/components/marketing/event-social-proof";
 import { Suspense } from "react";
-import { getEventMedia } from "@/lib/media";
+import { getEventMedia, getActiveSponsors } from "@/lib/media";
 import { HeroMedia } from "@/components/media/hero-media";
 import { MediaGallery } from "@/components/media/media-gallery";
 import { VideoEmbed } from "@/components/media/video-embed";
+import { LegacyStrip } from "@/components/event/legacy-strip";
+import { CTABand } from "@/components/event/cta-band";
+import { SponsorsSection } from "@/components/event/sponsors-section";
+import { RouteSection } from "@/components/event/route-section";
+import { TestimonialsSection } from "@/components/event/testimonials-section";
+import { getCurrentOrg } from "@/lib/org";
 
 export async function generateMetadata({
   params,
@@ -53,12 +59,49 @@ export default async function EventDetailPage({
   const event = events?.find((e) => (e.slug ?? slugify(e.title)) === slug);
   if (!event) notFound();
 
+  const isHHH = event.series_key === "hhh";
   const incentive = getMarketingIncentive(event.title);
-  const media = await getEventMedia(event.id);
+  const eventSlug = event.slug ?? slugify(event.title);
+
+  // Media, sponsors, and HHH-specific data fetched in parallel
+  const [media, org] = await Promise.all([
+    getEventMedia(event.id),
+    getCurrentOrg(),
+  ]);
+
+  const [sponsors, legacyStats, userMiles] = await Promise.all([
+    org ? getActiveSponsors(org.id) : Promise.resolve([]),
+    isHHH
+      ? supabase
+          .from("hhh_legacy_leaderboard_v")
+          .select("total_hhh_miles")
+          .then(({ data }) => {
+            const rows = data ?? [];
+            return {
+              riderCount: rows.length,
+              totalMiles: rows.reduce(
+                (sum, r) => sum + (r.total_hhh_miles ?? 0),
+                0
+              ),
+            };
+          })
+      : Promise.resolve(null),
+    isHHH
+      ? supabase.auth
+          .getUser()
+          .then(async ({ data: { user } }) => {
+            if (!user) return null;
+            const { data } = await supabase
+              .from("hhh_legacy_leaderboard_v")
+              .select("total_hhh_miles")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            return data?.total_hhh_miles ?? null;
+          })
+      : Promise.resolve(null),
+  ]);
 
   const heroAsset = media.hero[0] ?? null;
-  const galleryAssets = media.gallery;
-  const highlightAssets = media.section;
 
   return (
     <>
@@ -73,6 +116,11 @@ export default async function EventDetailPage({
           <HeroMedia asset={heroAsset} eventTitle={event.title} />
         )}
 
+        {/* Secondary hero images */}
+        {media.hero_secondary.length > 0 && (
+          <MediaGallery assets={media.hero_secondary} />
+        )}
+
         {incentive && (
           <MarketingIncentiveBanner
             title={incentive.title}
@@ -82,6 +130,7 @@ export default async function EventDetailPage({
           />
         )}
 
+        {/* Event info card */}
         <Card>
           <CardHeader>
             <CardTitle>{event.title}</CardTitle>
@@ -116,31 +165,58 @@ export default async function EventDetailPage({
               <EventSocialProof eventId={event.id} />
             </Suspense>
 
-            <Link href={`/register/${event.slug ?? slugify(event.title)}`}>
+            <Link href={`/register/${eventSlug}`}>
               <Button className="mt-4 w-full">Register Now</Button>
             </Link>
           </CardContent>
         </Card>
 
+        {/* HHH Legacy Strip */}
+        {isHHH && legacyStats && (
+          <LegacyStrip
+            riderCount={legacyStats.riderCount}
+            totalMiles={legacyStats.totalMiles}
+          />
+        )}
+
+        {/* Route preview */}
+        <RouteSection assets={media.route_preview} />
+
         {/* Photo gallery */}
-        {galleryAssets.length > 0 && (
+        {media.gallery.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Photos</h2>
-            <MediaGallery assets={galleryAssets} />
+            <MediaGallery assets={media.gallery} />
           </div>
         )}
 
+        {/* Inline section media */}
+        {media.inline_section.length > 0 && (
+          <MediaGallery assets={media.inline_section} />
+        )}
+
         {/* Video highlights */}
-        {highlightAssets.length > 0 && (
+        {media.section.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Highlights</h2>
             <div className="space-y-4">
-              {highlightAssets.map((asset) => (
+              {media.section.map((asset) => (
                 <VideoEmbed key={asset.id} asset={asset} />
               ))}
             </div>
           </div>
         )}
+
+        {/* Testimonials */}
+        <TestimonialsSection assets={media.testimonial} />
+
+        {/* HHH CTA band */}
+        {isHHH && (
+          <CTABand eventSlug={eventSlug} userMiles={userMiles} />
+        )}
+
+        {/* Sponsors */}
+        <SponsorsSection sponsors={sponsors} />
       </section>
     </>
   );

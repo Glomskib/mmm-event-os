@@ -32,12 +32,29 @@ import {
   moveMediaAsset,
 } from "./actions";
 
-type PlacementTab = "hero" | "gallery" | "section";
+type PlacementTab =
+  | "hero"
+  | "gallery"
+  | "section"
+  | "banner"
+  | "hero_secondary"
+  | "route_preview"
+  | "testimonial"
+  | "inline_section"
+  | "background_loop"
+  | "sponsor_showcase";
 
 const PLACEMENT_LABELS: Record<PlacementTab, string> = {
   hero: "Hero",
   gallery: "Gallery",
   section: "Highlights",
+  banner: "Banner",
+  hero_secondary: "Hero 2nd",
+  route_preview: "Route",
+  testimonial: "Testimonial",
+  inline_section: "Inline",
+  background_loop: "BG Loop",
+  sponsor_showcase: "Sponsors",
 };
 
 interface Props {
@@ -64,6 +81,7 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
   const [embedTitle, setEmbedTitle] = useState("");
   const [embedCaption, setEmbedCaption] = useState("");
   const [embedPlacement, setEmbedPlacement] = useState<PlacementTab>("section");
+  const [showExtendedTabs, setShowExtendedTabs] = useState(false);
   const [showEmbedForm, setShowEmbedForm] = useState(false);
 
   const eventId = selectedEventId;
@@ -223,28 +241,63 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
       </Card>
 
       {/* Placement tabs */}
-      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-        {(["hero", "gallery", "section"] as PlacementTab[]).map((tab) => {
-          const count = media.filter((a) => a.placement === tab).length;
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {PLACEMENT_LABELS[tab]}
-              {count > 0 && (
-                <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="space-y-1">
+        <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
+          {(["hero", "gallery", "section", "banner"] as PlacementTab[]).map((tab) => {
+            const count = media.filter((a) => a.placement === tab).length;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeTab === tab
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {PLACEMENT_LABELS[tab]}
+                {count > 0 && (
+                  <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setShowExtendedTabs((v) => !v)}
+            className="rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+            title="More placements"
+          >
+            {showExtendedTabs ? "▲" : "▼"}
+          </button>
+        </div>
+
+        {showExtendedTabs && (
+          <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1">
+            {(["hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase"] as PlacementTab[]).map((tab) => {
+              const count = media.filter((a) => a.placement === tab).length;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeTab === tab
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {PLACEMENT_LABELS[tab]}
+                  {count > 0 && (
+                    <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -333,6 +386,13 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
                     <option value="hero">Hero</option>
                     <option value="gallery">Gallery</option>
                     <option value="section">Highlights</option>
+                    <option value="banner">Banner</option>
+                    <option value="hero_secondary">Hero 2nd</option>
+                    <option value="route_preview">Route</option>
+                    <option value="testimonial">Testimonial</option>
+                    <option value="inline_section">Inline</option>
+                    <option value="background_loop">BG Loop</option>
+                    <option value="sponsor_showcase">Sponsors</option>
                   </select>
                 </div>
                 <Button
