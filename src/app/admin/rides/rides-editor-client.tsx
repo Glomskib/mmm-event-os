@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Loader2, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Save, CalendarPlus, Copy } from "lucide-react";
 
 interface SeriesItem {
   id: string;
@@ -36,14 +36,19 @@ const DIFFICULTY_VARIANT: Record<string, "default" | "secondary" | "destructive"
 export function RidesEditorClient({
   series,
   updateAction,
+  createOccurrencesAction,
+  duplicateToNextWeekAction,
 }: {
   series: SeriesItem[];
   updateAction: (formData: FormData) => Promise<void>;
+  createOccurrencesAction: (seriesId: string) => Promise<{ created: number }>;
+  duplicateToNextWeekAction: (seriesId: string) => Promise<{ date: string }>;
 }) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [scheduleMsg, setScheduleMsg] = useState<Record<string, string>>({});
 
   function handleSave(id: string, form: HTMLFormElement) {
     setSavingId(id);
@@ -53,6 +58,35 @@ export function RidesEditorClient({
       await updateAction(fd);
       setSavingId(null);
       router.refresh();
+    });
+  }
+
+  function handleCreate8Weeks(id: string) {
+    startTransition(async () => {
+      try {
+        const res = await createOccurrencesAction(id);
+        setScheduleMsg((prev) => ({
+          ...prev,
+          [id]: res.created === 0
+            ? "All 8 weeks already exist."
+            : `Created ${res.created} occurrence${res.created === 1 ? "" : "s"}.`,
+        }));
+        router.refresh();
+      } catch (e) {
+        setScheduleMsg((prev) => ({ ...prev, [id]: `Error: ${(e as Error).message}` }));
+      }
+    });
+  }
+
+  function handleDuplicate(id: string) {
+    startTransition(async () => {
+      try {
+        const res = await duplicateToNextWeekAction(id);
+        setScheduleMsg((prev) => ({ ...prev, [id]: `Duplicated to ${res.date}.` }));
+        router.refresh();
+      } catch (e) {
+        setScheduleMsg((prev) => ({ ...prev, [id]: `Error: ${(e as Error).message}` }));
+      }
     });
   }
 
@@ -179,6 +213,46 @@ export function RidesEditorClient({
                     Save
                   </Button>
                 </form>
+
+                {/* Scheduling tools */}
+                <div className="mt-4 border-t pt-4">
+                  <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Scheduling
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => handleCreate8Weeks(s.id)}
+                    >
+                      {isPending && savingId !== s.id ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CalendarPlus className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Create next 8 weeks
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isPending}
+                      onClick={() => handleDuplicate(s.id)}
+                    >
+                      {isPending && savingId !== s.id ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Duplicate to next week
+                    </Button>
+                  </div>
+                  {scheduleMsg[s.id] && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {scheduleMsg[s.id]}
+                    </p>
+                  )}
+                </div>
               </CardContent>
             )}
           </Card>
