@@ -4,6 +4,10 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+export function getFromAddress() {
+  return process.env.RESEND_FROM ?? "Miles <miles@makingmilesmatter.com>";
+}
+
 interface WaiverEmailData {
   participantName: string;
   eventTitle: string;
@@ -17,7 +21,7 @@ export async function sendWaiverEmail(to: string, data: WaiverEmailData) {
   const resend = getResend();
 
   await resend.emails.send({
-    from: "Making Miles Matter <noreply@makingmilesmatter.org>",
+    from: getFromAddress(),
     to,
     subject: `Your Registration + Waiver Copy — ${eventTitle}`,
     html: `
@@ -35,7 +39,7 @@ export async function sendWaiverEmail(to: string, data: WaiverEmailData) {
   // Internal copy
   if (process.env.MMM_ADMIN_EMAIL) {
     await resend.emails.send({
-      from: "Making Miles Matter <noreply@makingmilesmatter.org>",
+      from: getFromAddress(),
       to: process.env.MMM_ADMIN_EMAIL,
       subject: `[Admin] New Registration — ${participantName} — ${eventTitle}`,
       html: `

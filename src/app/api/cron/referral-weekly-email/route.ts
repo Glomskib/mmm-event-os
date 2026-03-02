@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { MILESTONE_TIERS } from "@/lib/referrals";
+import { getFromAddress } from "@/lib/resend";
 
 export const maxDuration = 60;
 
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: "Making Miles Matter <noreply@makingmilesmatter.org>",
+        from: getFromAddress(),
         to: email,
         subject: `Your Referral Update — Rank #${referrer.rank ?? "—"}`,
         html: `
