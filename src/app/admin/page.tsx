@@ -23,6 +23,7 @@ import {
   Wand2,
   Rocket,
   Handshake,
+  Camera,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -147,6 +148,13 @@ const adminCards = [
     icon: Handshake,
     href: "/admin/sponsors",
     color: "text-sky-600",
+  },
+  {
+    title: "Media",
+    description: "Upload photos, videos, and embeds for events.",
+    icon: Camera,
+    href: "/admin/media",
+    color: "text-primary",
   },
 ];
 

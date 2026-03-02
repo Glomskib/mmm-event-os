@@ -318,6 +318,65 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          id: string
+          org_id: string
+          entity_type: Database["public"]["Enums"]["media_entity_type"]
+          entity_id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          placement: Database["public"]["Enums"]["media_placement"]
+          title: string | null
+          caption: string | null
+          url: string
+          thumb_url: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          entity_type: Database["public"]["Enums"]["media_entity_type"]
+          entity_id: string
+          kind: Database["public"]["Enums"]["media_kind"]
+          placement?: Database["public"]["Enums"]["media_placement"]
+          title?: string | null
+          caption?: string | null
+          url: string
+          thumb_url?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          entity_type?: Database["public"]["Enums"]["media_entity_type"]
+          entity_id?: string
+          kind?: Database["public"]["Enums"]["media_kind"]
+          placement?: Database["public"]["Enums"]["media_placement"]
+          title?: string | null
+          caption?: string | null
+          url?: string
+          thumb_url?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_winner_history: {
         Row: {
           announced_at: string | null
@@ -1060,6 +1119,9 @@ export type Database = {
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
+      media_entity_type: "event" | "ride_series" | "ride_occurrence" | "sponsor" | "page"
+      media_kind: "image" | "video" | "embed"
+      media_placement: "hero" | "gallery" | "section" | "banner"
       raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event" | "early_bonus"
       registration_status:
         | "pending"
@@ -1208,6 +1270,9 @@ export const Constants = {
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
+      media_entity_type: ["event", "ride_series", "ride_occurrence", "sponsor", "page"],
+      media_kind: ["image", "video", "embed"],
+      media_placement: ["hero", "gallery", "section", "banner"],
       raffle_entry_source: ["shop_ride", "referral", "bonus", "event", "early_bonus"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
