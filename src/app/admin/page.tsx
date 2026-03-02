@@ -26,6 +26,7 @@ import {
   Camera,
   FileUp,
   Map,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -171,6 +172,13 @@ const adminCards = [
     icon: FileUp,
     href: "/admin/hhh-import",
     color: "text-emerald-700",
+  },
+  {
+    title: "Jersey Voting",
+    description: "Manage jersey designs and view voting results.",
+    icon: Trophy,
+    href: "/admin/jersey",
+    color: "text-amber-600",
   },
 ];
 

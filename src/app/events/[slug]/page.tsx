@@ -30,6 +30,8 @@ import { RiderStats } from "@/components/event/rider-stats";
 import { EventCountdown } from "@/components/event/event-countdown";
 import { AnnualBadge } from "@/components/event/annual-badge";
 import { getCurrentOrg } from "@/lib/org";
+import { isVotingOpen } from "@/lib/jersey-voting";
+import { Trophy } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -251,6 +253,33 @@ export default async function EventDetailPage({
             stats={regStats}
             registrationOpen={registrationOpen}
           />
+        )}
+
+        {/* Jersey voting CTA — HHH only, only while voting is open */}
+        {isHHH && isVotingOpen() && (
+          <div
+            className="rounded-xl px-6 py-5 text-center"
+            style={{ backgroundColor: "var(--brand-navy)" }}
+          >
+            <Trophy
+              className="mx-auto mb-2 h-6 w-6"
+              style={{ color: "var(--brand-orange)" }}
+            />
+            <h2 className="text-base font-bold text-white">
+              Vote for the 2026 HHH Jersey
+            </h2>
+            <p className="mt-1 text-xs text-white/70">
+              Voting closes May 1 — make your voice heard.
+            </p>
+            <Link href="/hhh-jersey-vote" className="mt-3 inline-block">
+              <Button
+                size="sm"
+                style={{ backgroundColor: "var(--brand-orange)", color: "#fff" }}
+              >
+                Vote Now
+              </Button>
+            </Link>
+          </div>
         )}
 
         {/* Sponsors */}

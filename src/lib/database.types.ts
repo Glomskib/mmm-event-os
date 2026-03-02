@@ -435,6 +435,99 @@ export type Database = {
           },
         ]
       }
+      jersey_designs: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          org_id: string
+          series_key: string
+          title: string
+          year: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          org_id: string
+          series_key?: string
+          title: string
+          year: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          org_id?: string
+          series_key?: string
+          title?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jersey_designs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jersey_votes: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          org_id: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          org_id: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          org_id?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jersey_votes_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "jersey_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jersey_votes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jersey_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_assets: {
         Row: {
           id: string
