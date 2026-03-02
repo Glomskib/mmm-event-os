@@ -507,30 +507,6 @@ export type Database = {
           },
         ]
       }
-      system_logs: {
-        Row: {
-          id: string
-          type: string
-          message: string
-          meta: Json
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          type: string
-          message: string
-          meta?: Json
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          type?: string
-          message?: string
-          meta?: Json
-          created_at?: string
-        }
-        Relationships: []
-      }
       ride_series: {
         Row: {
           created_at: string
@@ -589,6 +565,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          meta: Json | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          meta?: Json | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          meta?: Json | null
+          type?: string
+        }
+        Relationships: []
       }
     }
     Views: {
