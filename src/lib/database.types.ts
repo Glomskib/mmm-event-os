@@ -813,6 +813,152 @@ export type Database = {
           },
         ]
       }
+      sponsor_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          sponsor_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          sponsor_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_contacts_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_interactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          occurred_at: string
+          sponsor_id: string
+          summary: string
+          type: Database["public"]["Enums"]["sponsor_interaction_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          occurred_at?: string
+          sponsor_id: string
+          summary: string
+          type: Database["public"]["Enums"]["sponsor_interaction_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          occurred_at?: string
+          sponsor_id?: string
+          summary?: string
+          type?: Database["public"]["Enums"]["sponsor_interaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_interactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_interactions_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsors: {
+        Row: {
+          address: string | null
+          committed_amount: number | null
+          created_at: string
+          expected_amount: number | null
+          id: string
+          name: string
+          next_followup_at: string | null
+          notes: string | null
+          org_id: string
+          owner_profile_id: string | null
+          status: Database["public"]["Enums"]["sponsor_status"]
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          committed_amount?: number | null
+          created_at?: string
+          expected_amount?: number | null
+          id?: string
+          name: string
+          next_followup_at?: string | null
+          notes?: string | null
+          org_id: string
+          owner_profile_id?: string | null
+          status?: Database["public"]["Enums"]["sponsor_status"]
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          committed_amount?: number | null
+          created_at?: string
+          expected_amount?: number | null
+          id?: string
+          name?: string
+          next_followup_at?: string | null
+          notes?: string | null
+          org_id?: string
+          owner_profile_id?: string | null
+          status?: Database["public"]["Enums"]["sponsor_status"]
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsors_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_logs: {
         Row: {
           created_at: string
@@ -875,6 +1021,14 @@ export type Database = {
         | "cancelled"
         | "free"
       ride_difficulty: "easy" | "moderate" | "hard"
+      sponsor_interaction_type: "email" | "call" | "meeting" | "text"
+      sponsor_status:
+        | "prospect"
+        | "contacted"
+        | "negotiating"
+        | "committed"
+        | "paid"
+        | "declined"
       user_role: "admin" | "member"
     }
     CompositeTypes: {
@@ -1010,6 +1164,15 @@ export const Constants = {
       raffle_entry_source: ["shop_ride", "referral", "bonus", "event"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
+      sponsor_interaction_type: ["email", "call", "meeting", "text"],
+      sponsor_status: [
+        "prospect",
+        "contacted",
+        "negotiating",
+        "committed",
+        "paid",
+        "declined",
+      ],
       user_role: ["admin", "member"],
     },
   },
