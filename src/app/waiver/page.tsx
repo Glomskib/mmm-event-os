@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { waiverText, waiverVersion } from "@/content/waiver/mmm_waiver_2026_v1";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -206,13 +207,28 @@ export default function WaiverPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {
+        // Response was not JSON (e.g. unexpected HTML 500 from server)
+      }
+
+      if (isDev) console.log("Waiver accept response:", res.status, data);
+
       if (!res.ok) {
-        if (isDev) console.error("Waiver accept error:", res.status, data);
-        setError(
-          data.error ||
-            `Registration failed (${res.status}). Please try again.`
-        );
+        if (res.status === 401 || res.status === 403) {
+          setError("Session expired. Please refresh the page and try again.");
+        } else if (res.status >= 500) {
+          const ref = data.requestId ? ` (ref: ${String(data.requestId)})` : "";
+          setError(`Server error${ref}. Please try again or contact support.`);
+        } else {
+          setError(
+            typeof data.error === "string"
+              ? data.error
+              : `Registration failed (${res.status}). Please try again.`
+          );
+        }
         setIsSubmitting(false);
         return;
       }
@@ -231,23 +247,27 @@ export default function WaiverPage() {
         body: JSON.stringify({ registration_id: data.registration_id }),
       });
 
-      const checkoutData = await checkoutRes.json();
+      let checkoutData: Record<string, unknown> = {};
+      try {
+        checkoutData = await checkoutRes.json();
+      } catch {
+        // Response was not JSON
+      }
+
+      if (isDev) console.log("Stripe checkout response:", checkoutRes.status, checkoutData);
+
       if (!checkoutRes.ok) {
-        if (isDev)
-          console.error(
-            "Stripe checkout error:",
-            checkoutRes.status,
-            checkoutData
-          );
+        const ref = checkoutData.requestId ? ` (ref: ${String(checkoutData.requestId)})` : "";
         setError(
-          checkoutData.error ||
-            `Checkout failed (${checkoutRes.status}). Your registration was saved — please try again or contact us.`
+          typeof checkoutData.error === "string"
+            ? checkoutData.error
+            : `Checkout failed (${checkoutRes.status})${ref}. Your registration was saved — please try again or contact us.`
         );
         setIsSubmitting(false);
         return;
       }
 
-      window.location.href = checkoutData.url;
+      window.location.href = checkoutData.url as string;
     } catch {
       setError("Network error. Please check your connection and try again.");
       setIsSubmitting(false);
@@ -314,7 +334,7 @@ export default function WaiverPage() {
               <select
                 value={selectedDistance}
                 onChange={(e) => setSelectedDistance(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-xs transition-colors focus:outline-none focus:ring-[3px] focus:ring-ring/50 focus:border-ring"
               >
                 <option value="">Choose a distance…</option>
                 {distances.map((d) => (
@@ -342,10 +362,10 @@ export default function WaiverPage() {
             <h3 className="text-sm font-medium">Participant Information</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="participant-name" className="text-xs text-muted-foreground">
+                <label htmlFor="participant-name" className="text-xs font-medium text-muted-foreground">
                   Full Name *
                 </label>
-                <input
+                <Input
                   id="participant-name"
                   type="text"
                   required
@@ -353,7 +373,7 @@ export default function WaiverPage() {
                   onChange={(e) => setParticipantName(e.target.value)}
                   onBlur={() => markTouched("participantName")}
                   placeholder="Jane Doe"
-                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.participantName ? "border-red-400" : ""}`}
+                  aria-invalid={!!fieldErrors.participantName}
                 />
                 <FieldError
                   show={!!fieldErrors.participantName}
@@ -361,10 +381,10 @@ export default function WaiverPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="participant-email" className="text-xs text-muted-foreground">
+                <label htmlFor="participant-email" className="text-xs font-medium text-muted-foreground">
                   Email *
                 </label>
-                <input
+                <Input
                   id="participant-email"
                   type="email"
                   required
@@ -372,7 +392,7 @@ export default function WaiverPage() {
                   onChange={(e) => setParticipantEmail(e.target.value)}
                   onBlur={() => markTouched("participantEmail")}
                   placeholder="jane@example.com"
-                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.participantEmail ? "border-red-400" : ""}`}
+                  aria-invalid={!!fieldErrors.participantEmail}
                 />
                 <FieldError
                   show={!!fieldErrors.participantEmail}
@@ -387,10 +407,10 @@ export default function WaiverPage() {
             <h3 className="text-sm font-medium">Emergency Contact</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label htmlFor="emergency-name" className="text-xs text-muted-foreground">
+                <label htmlFor="emergency-name" className="text-xs font-medium text-muted-foreground">
                   Contact Name *
                 </label>
-                <input
+                <Input
                   id="emergency-name"
                   type="text"
                   required
@@ -398,7 +418,7 @@ export default function WaiverPage() {
                   onChange={(e) => setEmergencyContactName(e.target.value)}
                   onBlur={() => markTouched("emergencyContactName")}
                   placeholder="John Doe"
-                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.emergencyContactName ? "border-red-400" : ""}`}
+                  aria-invalid={!!fieldErrors.emergencyContactName}
                 />
                 <FieldError
                   show={!!fieldErrors.emergencyContactName}
@@ -406,10 +426,10 @@ export default function WaiverPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label htmlFor="emergency-phone" className="text-xs text-muted-foreground">
+                <label htmlFor="emergency-phone" className="text-xs font-medium text-muted-foreground">
                   Contact Phone *
                 </label>
-                <input
+                <Input
                   id="emergency-phone"
                   type="tel"
                   required
@@ -417,7 +437,7 @@ export default function WaiverPage() {
                   onChange={(e) => setEmergencyContactPhone(e.target.value)}
                   onBlur={() => markTouched("emergencyContactPhone")}
                   placeholder="(555) 123-4567"
-                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.emergencyContactPhone ? "border-red-400" : ""}`}
+                  aria-invalid={!!fieldErrors.emergencyContactPhone}
                 />
                 <FieldError
                   show={!!fieldErrors.emergencyContactPhone}

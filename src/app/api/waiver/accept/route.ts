@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPrice } from "@/lib/pricing";
@@ -12,8 +13,32 @@ import { sendWaiverEmail } from "@/lib/resend";
 import { applyEarlyBonusForRegistration } from "@/lib/incentives";
 
 export async function POST(request: Request) {
+  const requestId = randomUUID().slice(0, 8);
+
+  try {
+  return await handlePost(request, requestId);
+  } catch (err) {
+    console.error("[waiver/accept]", requestId, "unhandled_error", err);
+    return NextResponse.json(
+      { error: "An unexpected server error occurred.", requestId },
+      { status: 500 }
+    );
+  }
+}
+
+async function handlePost(request: Request, requestId: string) {
   const supabase = await createClient();
-  const body = await request.json();
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body.", requestId },
+      { status: 400 }
+    );
+  }
+
   const {
     event_id,
     distance,
@@ -22,11 +47,21 @@ export async function POST(request: Request) {
     participant_email,
     emergency_contact_name,
     emergency_contact_phone,
-  } = body;
+  } = body as {
+    event_id?: string;
+    distance?: string;
+    referralCode?: string;
+    participant_name?: string;
+    participant_email?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
+  };
+
+  console.log("[waiver/accept]", requestId, "start", { event_id, distance: distance ?? null });
 
   if (!event_id || !distance) {
     return NextResponse.json(
-      { error: "event_id and distance are required." },
+      { error: "event_id and distance are required.", requestId },
       { status: 400 }
     );
   }
@@ -42,12 +77,14 @@ export async function POST(request: Request) {
       {
         error:
           "Participant name, email, emergency contact name, and phone are required.",
+        requestId,
       },
       { status: 400 }
     );
   }
 
   // Look up the event
+  console.log("[waiver/accept]", requestId, "lookup_event");
   const { data: event, error: eventError } = await supabase
     .from("events")
     .select("id, org_id, title, status")
@@ -55,12 +92,13 @@ export async function POST(request: Request) {
     .single();
 
   if (eventError || !event) {
-    return NextResponse.json({ error: "Event not found." }, { status: 404 });
+    console.error("[waiver/accept]", requestId, "event_not_found", eventError?.message);
+    return NextResponse.json({ error: "Event not found.", requestId }, { status: 404 });
   }
 
   if (event.status !== "published") {
     return NextResponse.json(
-      { error: "Event is not open for registration." },
+      { error: "Event is not open for registration.", requestId },
       { status: 400 }
     );
   }
@@ -110,12 +148,13 @@ export async function POST(request: Request) {
     .single();
 
   if (regError || !reg) {
-    console.error("Failed to create registration:", regError);
+    console.error("[waiver/accept]", requestId, "reg_insert_failed", regError?.message, regError?.code);
     return NextResponse.json(
-      { error: "Failed to create registration." },
+      { error: "Failed to create registration.", requestId },
       { status: 500 }
     );
   }
+  console.log("[waiver/accept]", requestId, "reg_created", reg.id);
 
   // Generate waiver PDF and upload to storage
   try {
@@ -181,6 +220,7 @@ export async function POST(request: Request) {
     );
   }
 
+  console.log("[waiver/accept]", requestId, "done", { is_free: isFree });
   return NextResponse.json({
     registration_id: reg.id,
     is_free: isFree,
