@@ -1,6 +1,5 @@
 import { Hero } from "@/components/layout/hero";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Card,
   CardContent,
@@ -15,8 +14,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { EarlyBirdCountdown } from "@/components/early-bird-countdown";
 import { RegistrationUrgencyBanner } from "@/components/registration-urgency-banner";
-import { EventIncentiveBanner } from "@/components/event-incentive-banner";
-import { getIncentiveForEvent } from "@/lib/incentive-config";
+import { MarketingIncentiveSnippet } from "@/components/marketing/event-incentive-banner";
+import { EventSocialProof } from "@/components/marketing/event-social-proof";
+import { getMarketingIncentive } from "@/lib/marketing-incentives";
+import { slugify } from "@/lib/event-slug";
 
 export const metadata = { title: "Events | MMM Event OS" };
 
@@ -28,23 +29,6 @@ export default async function EventsPage() {
     .select("*")
     .eq("status", "published")
     .order("date", { ascending: true });
-
-  // Fetch paid+free registration counts per event for incentive banners
-  const regCounts = new Map<string, number>();
-  if (events && events.length > 0) {
-    const admin = createAdminClient();
-    const { data: regs } = await admin
-      .from("registrations")
-      .select("event_id")
-      .in("event_id", events.map((e) => e.id))
-      .in("status", ["paid", "free"]);
-
-    if (regs) {
-      for (const r of regs) {
-        regCounts.set(r.event_id, (regCounts.get(r.event_id) ?? 0) + 1);
-      }
-    }
-  }
 
   return (
     <>
@@ -63,36 +47,39 @@ export default async function EventsPage() {
         {events && events.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => {
-              const incentive = getIncentiveForEvent(event.title);
-              const count = regCounts.get(event.id) ?? 0;
+              const incentive = getMarketingIncentive(event.title);
+              const eventSlug = slugify(event.title);
 
               return (
                 <Card key={event.id} className="overflow-hidden">
                   {event.image_url && (
-                    <div className="aspect-video bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={event.image_url}
-                        alt={event.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                    <Link href={`/events/${eventSlug}`}>
+                      <div className="aspect-video bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    </Link>
                   )}
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{event.title}</CardTitle>
+                      <Link href={`/events/${eventSlug}`}>
+                        <CardTitle className="text-lg hover:underline">
+                          {event.title}
+                        </CardTitle>
+                      </Link>
                       <Badge variant="secondary">{event.status}</Badge>
                     </div>
                     <CardDescription>{event.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     {incentive && (
-                      <EventIncentiveBanner
+                      <MarketingIncentiveSnippet
                         title={incentive.title}
-                        deadline={new Date(incentive.deadline)}
-                        perks={incentive.perks}
-                        eventSlug={incentive.eventSlug}
-                        registeredCount={count}
+                        deadlineIso={incentive.deadlineIso}
                       />
                     )}
                     <div className="flex items-center gap-2">
@@ -114,8 +101,13 @@ export default async function EventsPage() {
                       </div>
                     )}
                     {event.early_bird_deadline && (
-                      <EarlyBirdCountdown deadline={event.early_bird_deadline} />
+                      <EarlyBirdCountdown
+                        deadline={event.early_bird_deadline}
+                      />
                     )}
+                    <Suspense>
+                      <EventSocialProof eventId={event.id} />
+                    </Suspense>
                     <Link href={`/waiver?event_id=${event.id}`}>
                       <Button className="mt-2 w-full" size="sm">
                         Register
