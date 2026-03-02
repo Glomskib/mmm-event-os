@@ -120,7 +120,17 @@ export default async function LaunchPage() {
       : "No upcoming rides found",
   });
 
-  // 10. At least 1 event exists (HHH / FFF)
+  // 10. Strava club join URL (optional — informational only)
+  const stravaClubUrl = !!process.env.NEXT_PUBLIC_STRAVA_CLUB_JOIN_URL;
+  checks.push({
+    label: "Strava club join URL (NEXT_PUBLIC_STRAVA_CLUB_JOIN_URL)",
+    passed: stravaClubUrl,
+    detail: stravaClubUrl
+      ? "Present — club CTA will show on /rides"
+      : "Not set — Strava club section hidden on /rides (optional)",
+  });
+
+  // 11. At least 1 event exists (HHH / FFF)
   const { data: events } = await admin
     .from("events")
     .select("title")

@@ -28,6 +28,17 @@ const REQUIRED_ENV_VARS = [
   "LATE_API_KEY",
 ] as const;
 
+const OPTIONAL_ENV_VARS = [
+  {
+    key: "NEXT_PUBLIC_STRAVA_CLUB_JOIN_URL",
+    description: "Strava club join link shown on /rides page",
+  },
+  {
+    key: "NEXT_PUBLIC_STRAVA_CLUB_EMBED_IFRAME",
+    description: "Strava club widget embed HTML (optional)",
+  },
+] as const;
+
 export default async function SystemHealthPage() {
   const org = await getCurrentOrg();
   if (!org) {
@@ -35,6 +46,12 @@ export default async function SystemHealthPage() {
   }
 
   const admin = createAdminClient();
+
+  const optionalEnvChecks = OPTIONAL_ENV_VARS.map(({ key, description }) => ({
+    key,
+    description,
+    present: !!process.env[key],
+  }));
 
   // Run all queries in parallel
   const [envChecks, connectivityCheck, recentRegistrations, recentLogs] =
@@ -121,6 +138,36 @@ export default async function SystemHealthPage() {
                     <span className="text-red-600 text-sm font-medium">
                       Missing
                     </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Optional Environment Variables */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Optional Environment Variables</CardTitle>
+            <CardDescription>
+              These enable optional features — not required for core functionality
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {optionalEnvChecks.map((env) => (
+                <div
+                  key={env.key}
+                  className="flex items-start justify-between gap-3 rounded-lg border px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <code className="text-xs">{env.key}</code>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{env.description}</p>
+                  </div>
+                  {env.present ? (
+                    <span className="shrink-0 text-green-600 text-sm font-medium">Set</span>
+                  ) : (
+                    <span className="shrink-0 text-muted-foreground text-sm">Not set</span>
                   )}
                 </div>
               ))}

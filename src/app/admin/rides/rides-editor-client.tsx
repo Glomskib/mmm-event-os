@@ -24,6 +24,7 @@ interface SeriesItem {
   route_ridewithgps_url: string | null;
   route_strava_url: string | null;
   route_wahoo_url: string | null;
+  route_embed_html: string | null;
   notes: string | null;
 }
 
@@ -190,6 +191,21 @@ export function RidesEditorClient({
                       defaultValue={s.route_wahoo_url ?? ""}
                       placeholder="https://elemnt.wahoo.com/routes/..."
                     />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`embed-${s.id}`}>Route Embed HTML</Label>
+                    <textarea
+                      id={`embed-${s.id}`}
+                      name="route_embed_html"
+                      defaultValue={s.route_embed_html ?? ""}
+                      placeholder='Paste <iframe> from RideWithGPS or Strava (other hosts will be rejected)'
+                      rows={4}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Allowed hosts: ridewithgps.com, strava.com — script tags rejected.
+                    </p>
                   </div>
 
                   <div>

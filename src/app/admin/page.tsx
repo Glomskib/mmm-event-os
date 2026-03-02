@@ -25,6 +25,7 @@ import {
   Handshake,
   Camera,
   FileUp,
+  Map,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,6 +45,13 @@ const adminCards = [
     icon: Bike,
     href: "/admin/rides",
     color: "text-emerald-600",
+  },
+  {
+    title: "Routes",
+    description: "Set per-occurrence route URLs and embed maps.",
+    icon: Map,
+    href: "/admin/routes",
+    color: "text-emerald-700",
   },
   {
     title: "Members",

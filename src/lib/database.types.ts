@@ -886,6 +886,7 @@ export type Database = {
           note: string | null
           notes: string | null
           org_id: string
+          route_embed_html: string | null
           route_ridewithgps_url: string | null
           route_strava_url: string | null
           route_wahoo_url: string | null
@@ -900,6 +901,7 @@ export type Database = {
           note?: string | null
           notes?: string | null
           org_id: string
+          route_embed_html?: string | null
           route_ridewithgps_url?: string | null
           route_strava_url?: string | null
           route_wahoo_url?: string | null
@@ -914,6 +916,7 @@ export type Database = {
           note?: string | null
           notes?: string | null
           org_id?: string
+          route_embed_html?: string | null
           route_ridewithgps_url?: string | null
           route_strava_url?: string | null
           route_wahoo_url?: string | null
@@ -947,6 +950,7 @@ export type Database = {
           meet_location: string | null
           notes: string | null
           org_id: string
+          route_embed_html: string | null
           route_ridewithgps_url: string | null
           route_strava_url: string | null
           route_wahoo_url: string | null
@@ -963,6 +967,7 @@ export type Database = {
           meet_location?: string | null
           notes?: string | null
           org_id: string
+          route_embed_html?: string | null
           route_ridewithgps_url?: string | null
           route_strava_url?: string | null
           route_wahoo_url?: string | null
@@ -979,6 +984,7 @@ export type Database = {
           meet_location?: string | null
           notes?: string | null
           org_id?: string
+          route_embed_html?: string | null
           route_ridewithgps_url?: string | null
           route_strava_url?: string | null
           route_wahoo_url?: string | null

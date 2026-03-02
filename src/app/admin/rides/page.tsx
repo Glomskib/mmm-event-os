@@ -1,6 +1,7 @@
 import { Hero } from "@/components/layout/hero";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { validateEmbedHtml } from "@/lib/embed-sanitize";
 import { RidesEditorClient } from "./rides-editor-client";
 
 export const metadata = { title: "Rides | Admin | MMM Event OS" };
@@ -16,6 +17,10 @@ async function updateSeries(formData: FormData) {
 
   const admin = createAdminClient();
 
+  const rawEmbed = (formData.get("route_embed_html") as string) || null;
+  const embedError = validateEmbedHtml(rawEmbed);
+  if (embedError) throw new Error(`Route embed invalid: ${embedError}`);
+
   const { error } = await admin
     .from("ride_series")
     .update({
@@ -24,6 +29,7 @@ async function updateSeries(formData: FormData) {
         (formData.get("route_ridewithgps_url") as string) || null,
       route_strava_url: (formData.get("route_strava_url") as string) || null,
       route_wahoo_url: (formData.get("route_wahoo_url") as string) || null,
+      route_embed_html: rawEmbed,
       notes: (formData.get("notes") as string) || null,
     })
     .eq("id", id)
@@ -142,6 +148,7 @@ async function duplicateToNextWeek(seriesId: string): Promise<{ date: string }> 
     route_ridewithgps_url: latest.route_ridewithgps_url ?? null,
     route_strava_url: latest.route_strava_url ?? null,
     route_wahoo_url: latest.route_wahoo_url ?? null,
+    route_embed_html: latest.route_embed_html ?? null,
     notes: latest.notes ?? null,
   });
 
@@ -172,8 +179,17 @@ export default async function AdminRidesPage() {
     .order("day_of_week", { ascending: true });
 
   const seriesList = (series ?? []).map((s) => ({
-    ...s,
+    id: s.id,
+    title: s.title,
     dayName: DAY_NAMES[s.day_of_week] ?? `Day ${s.day_of_week}`,
+    time: s.time,
+    difficulty: s.difficulty as "easy" | "moderate" | "hard",
+    meet_location: s.meet_location ?? null,
+    route_ridewithgps_url: s.route_ridewithgps_url ?? null,
+    route_strava_url: s.route_strava_url ?? null,
+    route_wahoo_url: s.route_wahoo_url ?? null,
+    route_embed_html: s.route_embed_html ?? null,
+    notes: s.notes ?? null,
   }));
 
   return (
