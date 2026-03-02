@@ -20,7 +20,6 @@ import {
   ShieldCheck,
   Share2,
   Film,
-  Wand2,
   Rocket,
   Handshake,
   Camera,
@@ -130,13 +129,6 @@ const adminCards = [
     icon: Film,
     href: "/admin/wheels-and-reels",
     color: "text-rose-600",
-  },
-  {
-    title: "Social Drafts",
-    description: "Auto-generate weekly social post drafts.",
-    icon: Wand2,
-    href: "/admin/social-drafts",
-    color: "text-purple-600",
   },
   {
     title: "System",
