@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar, Bike, Users, Image, Download, Gift, Ticket } from "lucide-react";
+import { Calendar, Bike, Users, Image, Download, Gift, Ticket, BarChart3, ClipboardList, Mail } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Admin | MMM Event OS" };
@@ -47,6 +47,24 @@ const adminCards = [
     description: "Raffle pools and ticket management.",
     icon: Ticket,
     href: "/admin/raffles",
+  },
+  {
+    title: "Analytics",
+    description: "Registration metrics and revenue breakdown.",
+    icon: BarChart3,
+    href: "/admin/analytics",
+  },
+  {
+    title: "Event Day",
+    description: "Command center for day-of operations.",
+    icon: ClipboardList,
+    href: "/admin/event-day",
+  },
+  {
+    title: "Email",
+    description: "Weekly ride email controls.",
+    icon: Mail,
+    href: "/admin/email",
   },
   {
     title: "Exports",

@@ -150,6 +150,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          marketing_opt_in: boolean
           org_id: string
           role: Database["public"]["Enums"]["user_role"]
         }
@@ -159,6 +160,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          marketing_opt_in?: boolean
           org_id: string
           role?: Database["public"]["Enums"]["user_role"]
         }
@@ -168,6 +170,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          marketing_opt_in?: boolean
           org_id?: string
           role?: Database["public"]["Enums"]["user_role"]
         }
@@ -339,11 +342,13 @@ export type Database = {
       registrations: {
         Row: {
           amount: number
+          bib_issued: boolean
           created_at: string
           distance: string
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          emergency_flag: boolean
           event_id: string
           id: string
           org_id: string
@@ -366,11 +371,13 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          bib_issued?: boolean
           created_at?: string
           distance: string
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_flag?: boolean
           event_id: string
           id?: string
           org_id: string
@@ -393,11 +400,13 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bib_issued?: boolean
           created_at?: string
           distance?: string
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          emergency_flag?: boolean
           event_id?: string
           id?: string
           org_id?: string
@@ -441,8 +450,13 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          meet_location: string | null
           note: string | null
+          notes: string | null
           org_id: string
+          route_ridewithgps_url: string | null
+          route_strava_url: string | null
+          route_wahoo_url: string | null
           series_id: string
         }
         Insert: {
@@ -450,8 +464,13 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          meet_location?: string | null
           note?: string | null
+          notes?: string | null
           org_id: string
+          route_ridewithgps_url?: string | null
+          route_strava_url?: string | null
+          route_wahoo_url?: string | null
           series_id: string
         }
         Update: {
@@ -459,8 +478,13 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          meet_location?: string | null
           note?: string | null
+          notes?: string | null
           org_id?: string
+          route_ridewithgps_url?: string | null
+          route_strava_url?: string | null
+          route_wahoo_url?: string | null
           series_id?: string
         }
         Relationships: [
@@ -488,7 +512,12 @@ export type Database = {
           difficulty: Database["public"]["Enums"]["ride_difficulty"]
           id: string
           location: string | null
+          meet_location: string | null
+          notes: string | null
           org_id: string
+          route_ridewithgps_url: string | null
+          route_strava_url: string | null
+          route_wahoo_url: string | null
           time: string
           title: string
         }
@@ -499,7 +528,12 @@ export type Database = {
           difficulty?: Database["public"]["Enums"]["ride_difficulty"]
           id?: string
           location?: string | null
+          meet_location?: string | null
+          notes?: string | null
           org_id: string
+          route_ridewithgps_url?: string | null
+          route_strava_url?: string | null
+          route_wahoo_url?: string | null
           time: string
           title: string
         }
@@ -510,7 +544,12 @@ export type Database = {
           difficulty?: Database["public"]["Enums"]["ride_difficulty"]
           id?: string
           location?: string | null
+          meet_location?: string | null
+          notes?: string | null
           org_id?: string
+          route_ridewithgps_url?: string | null
+          route_strava_url?: string | null
+          route_wahoo_url?: string | null
           time?: string
           title?: string
         }
