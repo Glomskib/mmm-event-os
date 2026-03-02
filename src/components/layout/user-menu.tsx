@@ -47,6 +47,9 @@ export function UserMenu({
           <p className="text-muted-foreground">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
+        <Link href="/my-events">
+          <DropdownMenuItem>My Events</DropdownMenuItem>
+        </Link>
         <Link href="/profile">
           <DropdownMenuItem>Profile</DropdownMenuItem>
         </Link>

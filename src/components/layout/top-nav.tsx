@@ -70,6 +70,14 @@ export function TopNav({ user }: { user: { email: string; full_name?: string | n
                     {link.label}
                   </Link>
                 ))}
+                {user && (
+                  <Link
+                    href="/my-events"
+                    className="rounded-md px-3 py-2 text-sm font-medium text-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    My Events
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

@@ -85,7 +85,7 @@ export default async function EventDetailPage({
     getEventRegistrationStats(event.id, event.capacity ?? null),
   ]);
 
-  const [sponsors, legacyStats, userMiles] = await Promise.all([
+  const [sponsors, legacyStats, userMiles, userRegistration] = await Promise.all([
     org ? getActiveSponsors(org.id) : Promise.resolve([]),
     isHHH
       ? supabase
@@ -115,6 +115,20 @@ export default async function EventDetailPage({
             return data?.total_hhh_miles ?? null;
           })
       : Promise.resolve(null),
+    // Check if current user has a registration for this event
+    supabase.auth
+      .getUser()
+      .then(async ({ data: { user } }) => {
+        if (!user) return null;
+        const { data } = await supabase
+          .from("registrations")
+          .select("id, status, distance")
+          .eq("user_id", user.id)
+          .eq("event_id", event.id)
+          .in("status", ["paid", "free", "pending"])
+          .maybeSingle();
+        return data as { id: string; status: string; distance: string } | null;
+      }),
   ]);
 
   const heroAsset = media.hero[0] ?? null;
@@ -130,6 +144,44 @@ export default async function EventDetailPage({
         {/* Hero media (replaces brand Hero when present) */}
         {heroAsset && (
           <HeroMedia asset={heroAsset} eventTitle={event.title} />
+        )}
+
+        {/* "You're registered" banner */}
+        {userRegistration && (
+          <div
+            className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+            style={{ backgroundColor: "var(--brand-navy)" }}
+          >
+            <div className="flex items-center gap-2 text-sm text-white">
+              <span className="text-green-400">✓</span>
+              <span>
+                You&apos;re registered{userRegistration.distance ? ` · ${userRegistration.distance}` : ""}
+              </span>
+            </div>
+            {userRegistration.status === "pending" ? (
+              <Link
+                href={`/waiver?event_id=${event.id}&distance=${encodeURIComponent(userRegistration.distance)}`}
+                className="shrink-0"
+              >
+                <Button
+                  size="sm"
+                  style={{ backgroundColor: "var(--brand-orange)", color: "#fff" }}
+                >
+                  Finish Registration
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/my-events" className="shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 bg-transparent text-white hover:bg-white/10"
+                >
+                  My Events
+                </Button>
+              </Link>
+            )}
+          </div>
         )}
 
         {/* Countdown — below hero, urgency only when registration is open */}
