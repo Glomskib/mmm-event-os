@@ -507,6 +507,30 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          id: string
+          type: string
+          message: string
+          meta: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          type: string
+          message: string
+          meta?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          message?: string
+          meta?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       ride_series: {
         Row: {
           created_at: string

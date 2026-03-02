@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { getFromAddress } from "@/lib/resend";
-import { createLogger } from "@/lib/logger";
+import { createLogger, writeSystemLog } from "@/lib/logger";
 
 export const maxDuration = 60;
 
@@ -255,7 +255,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  timer.end({ emailsSent: sent, emailErrors: errors.length, rideCount: rides.length });
+  const durationMs = timer.end({ emailsSent: sent, emailErrors: errors.length, rideCount: rides.length });
+
+  writeSystemLog("cron:weekly-ride-email", "Execution complete", {
+    emailsSent: sent,
+    emailErrors: errors.length,
+    rideCount: rides.length,
+    durationMs,
+    testMode,
+  });
 
   return NextResponse.json({
     ok: true,

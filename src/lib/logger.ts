@@ -1,3 +1,6 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/database.types";
+
 const isDev = process.env.NODE_ENV === "development";
 
 type LogLevel = "info" | "warn" | "error";
@@ -29,6 +32,28 @@ function log(entry: LogEntry) {
       break;
     default:
       console.log(msg);
+  }
+}
+
+/**
+ * Write a log entry to the system_logs table.
+ * Fire-and-forget — never throws.
+ */
+export async function writeSystemLog(
+  type: string,
+  message: string,
+  meta?: Record<string, unknown>
+) {
+  try {
+    const admin = createAdminClient();
+    await admin.from("system_logs").insert({
+      type,
+      message,
+      meta: (meta ?? {}) as Json,
+    });
+  } catch {
+    // Never crash the caller
+    if (isDev) console.error("[writeSystemLog] failed to persist log");
   }
 }
 

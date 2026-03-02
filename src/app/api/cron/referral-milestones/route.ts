@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MILESTONE_TIERS, MILESTONE_TICKET_MAP, assertMilestoneTickets } from "@/lib/referrals";
-import { createLogger } from "@/lib/logger";
+import { createLogger, writeSystemLog } from "@/lib/logger";
 
 const log = createLogger("cron:referral-milestones");
 
@@ -84,7 +84,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  timer.end({ awarded, raffleTicketsCreated });
+  const durationMs = timer.end({ awarded, raffleTicketsCreated });
+
+  writeSystemLog("cron:referral-milestones", "Execution complete", {
+    awarded,
+    raffleTicketsCreated,
+    durationMs,
+  });
 
   return NextResponse.json({ ok: true, awarded, raffleTicketsCreated });
 }

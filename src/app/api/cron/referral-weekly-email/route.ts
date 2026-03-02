@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { MILESTONE_TIERS } from "@/lib/referrals";
 import { getFromAddress } from "@/lib/resend";
-import { createLogger } from "@/lib/logger";
+import { createLogger, writeSystemLog } from "@/lib/logger";
 
 export const maxDuration = 60;
 
@@ -131,7 +131,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  timer.end({ milestonesAwarded, emailsSent: sent, emailErrors: errors.length });
+  const durationMs = timer.end({ milestonesAwarded, emailsSent: sent, emailErrors: errors.length });
+
+  writeSystemLog("cron:referral-weekly-email", "Execution complete", {
+    milestonesAwarded,
+    emailsSent: sent,
+    emailErrors: errors.length,
+    durationMs,
+  });
 
   return NextResponse.json({
     ok: true,
