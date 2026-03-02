@@ -1,3 +1,5 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+
 /** Derive a URL-safe slug from an event title. */
 export function slugify(title: string): string {
   return title
@@ -8,9 +10,21 @@ export function slugify(title: string): string {
 
 /**
  * Resolve the canonical URL slug for a given event title.
- * Uses the same slugify() that powers /events/[slug] routing,
- * so any code that needs to look up an event by slug stays consistent.
+ * Checks events.slug in the DB first; falls back to slugify() if not set.
+ * Server-only (requires DB access).
  */
-export function resolveEventSlug(eventTitle: string): string {
+export async function resolveEventSlug(eventTitle: string): Promise<string> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("events")
+      .select("slug")
+      .eq("title", eventTitle)
+      .limit(1)
+      .maybeSingle();
+    if (data?.slug) return data.slug;
+  } catch {
+    // fall through to slugify
+  }
   return slugify(eventTitle);
 }

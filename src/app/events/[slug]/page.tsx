@@ -25,10 +25,10 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data: events } = await supabase
     .from("events")
-    .select("title")
+    .select("title, slug")
     .eq("status", "published");
 
-  const event = events?.find((e) => slugify(e.title) === slug);
+  const event = events?.find((e) => (e.slug ?? slugify(e.title)) === slug);
   return { title: event ? `${event.title} | Making Miles Matter` : "Event Not Found" };
 }
 
@@ -46,7 +46,7 @@ export default async function EventDetailPage({
     .eq("status", "published")
     .order("date", { ascending: true });
 
-  const event = events?.find((e) => slugify(e.title) === slug);
+  const event = events?.find((e) => (e.slug ?? slugify(e.title)) === slug);
   if (!event) notFound();
 
   const incentive = getMarketingIncentive(event.title);

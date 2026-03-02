@@ -1,12 +1,7 @@
 /**
  * Marketing-specific incentive banners for event pages.
  * Maps event title patterns to promotional copy + deadlines.
- *
- * eventSlug is derived from slugify() so it matches /events/[slug] routing.
- * e.g. "Fun Friday Fifty" → "fun-friday-fifty"
  */
-
-import { slugify } from "./event-slug";
 
 export interface MarketingIncentive {
   pattern: RegExp;
@@ -19,8 +14,8 @@ export interface MarketingIncentive {
 
 export const MARKETING_INCENTIVES: MarketingIncentive[] = [
   {
-    pattern: /Fun Friday Fifty/i,
-    eventSlug: slugify("Fun Friday Fifty"),
+    pattern: /Findlay Further Fondo/i,
+    eventSlug: "findlay-further-fondo",
     title: "Register by April 1 → Get 1 FREE raffle ticket (Main Raffle)",
     perks: [
       "1 FREE raffle ticket just for registering early",
@@ -30,8 +25,8 @@ export const MARKETING_INCENTIVES: MarketingIncentive[] = [
     deadlineIso: "2026-04-01T23:59:59",
   },
   {
-    pattern: /Houghton Hundred/i,
-    eventSlug: slugify("Houghton Hundred"),
+    pattern: /Hancock Horizontal Hundred/i,
+    eventSlug: "hancock-horizontal-hundred",
     title:
       "Register by May 31 → FREE custom HHH socks + 5 raffle entries (Main Raffle)",
     perks: [

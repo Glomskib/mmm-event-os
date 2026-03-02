@@ -181,6 +181,7 @@ export type Database = {
           image_url: string | null
           location: string | null
           org_id: string
+          slug: string | null
           status: Database["public"]["Enums"]["event_status"]
           title: string
         }
@@ -193,6 +194,7 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id: string
+          slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title: string
         }
@@ -205,6 +207,7 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id?: string
+          slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title?: string
         }

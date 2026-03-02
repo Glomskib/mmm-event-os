@@ -48,7 +48,7 @@ export default async function EventsPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event) => {
               const incentive = getMarketingIncentive(event.title);
-              const eventSlug = slugify(event.title);
+              const eventSlug = event.slug ?? slugify(event.title);
 
               return (
                 <Card key={event.id} className="overflow-hidden">

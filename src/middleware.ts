@@ -1,7 +1,18 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+// 301 redirects for old event slugs that were renamed
+const SLUG_REDIRECTS: Record<string, string> = {
+  "/events/fun-friday-fifty": "/events/findlay-further-fondo",
+  "/events/houghton-hundred": "/events/hancock-horizontal-hundred",
+};
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const redirect = SLUG_REDIRECTS[pathname];
+  if (redirect) {
+    return NextResponse.redirect(new URL(redirect, request.url), { status: 301 });
+  }
   return await updateSession(request);
 }
 

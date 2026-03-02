@@ -8,7 +8,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveEventSlug } from "@/lib/event-slug";
+import { slugify } from "@/lib/event-slug";
 import { writeSystemLog } from "@/lib/logger";
 
 interface EarlyBonusConfig {
@@ -23,11 +23,11 @@ interface EarlyBonusConfig {
 // FFF: Apr 1 2026 23:59:59 ET (EST = UTC-5) → 2026-04-02T04:59:59Z
 // HHH: May 31 2026 23:59:59 ET (EDT = UTC-4) → 2026-06-01T03:59:59Z
 const EARLY_BONUS_CONFIGS: Record<string, EarlyBonusConfig> = {
-  "fun-friday-fifty": {
+  "findlay-further-fondo": {
     deadlineUtc: "2026-04-02T04:59:59Z",
     mainTicketsTarget: 1,
   },
-  "houghton-hundred": {
+  "hancock-horizontal-hundred": {
     deadlineUtc: "2026-06-01T03:59:59Z",
     mainTicketsTarget: 5,
     merchPerk: "hhh_socks_2026",
@@ -61,7 +61,7 @@ export async function applyEarlyBonusForRegistration(
 
   const { data: evt, error: evtErr } = await admin
     .from("events")
-    .select("title")
+    .select("title, slug")
     .eq("id", reg.event_id)
     .single();
 
@@ -70,7 +70,7 @@ export async function applyEarlyBonusForRegistration(
     return;
   }
 
-  const eventSlug = resolveEventSlug(evt.title);
+  const eventSlug = (evt as { slug?: string | null }).slug ?? slugify(evt.title);
   const config = EARLY_BONUS_CONFIGS[eventSlug];
 
   if (!config) return; // no early bonus for this event
