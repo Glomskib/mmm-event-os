@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { RevenueBreakdownCard } from "./analytics-tables-client";
 
 export const metadata = { title: "Analytics | Admin | MMM Event OS" };
 
@@ -146,50 +147,24 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* --- Revenue by Event --- */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Revenue by Event</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {revenueByEvent.size === 0 ? (
-              <p className="text-sm text-muted-foreground">No revenue yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {[...revenueByEvent.entries()]
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([event, cents]) => (
-                    <div key={event} className="flex items-center justify-between">
-                      <span className="text-sm">{event}</span>
-                      <Badge variant="secondary">{fmt(cents)}</Badge>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <RevenueBreakdownCard
+          title="Revenue by Event"
+          items={[...revenueByEvent.entries()].map(([label, cents]) => ({
+            label,
+            cents,
+          }))}
+          csvFilename="revenue-by-event"
+        />
 
         {/* --- Revenue by Distance --- */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Revenue by Distance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {revenueByDistance.size === 0 ? (
-              <p className="text-sm text-muted-foreground">No revenue yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {[...revenueByDistance.entries()]
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([distance, cents]) => (
-                    <div key={distance} className="flex items-center justify-between">
-                      <span className="text-sm">{distance}</span>
-                      <Badge variant="secondary">{fmt(cents)}</Badge>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <RevenueBreakdownCard
+          title="Revenue by Distance"
+          items={[...revenueByDistance.entries()].map(([label, cents]) => ({
+            label,
+            cents,
+          }))}
+          csvFilename="revenue-by-distance"
+        />
       </section>
     </>
   );

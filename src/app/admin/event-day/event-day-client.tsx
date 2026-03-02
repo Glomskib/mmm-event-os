@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Pagination, usePagination } from "@/components/ui/pagination";
+import { Download } from "lucide-react";
 import { toggleBibIssued, toggleEmergencyFlag } from "./actions";
+
+const PER_PAGE = 25;
 
 export interface Participant {
   id: string;
@@ -28,29 +27,102 @@ export interface Participant {
   raffle_main: number;
 }
 
+function useDebounce(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
 export function EventDayClient({
   participants,
 }: {
   participants: Participant[];
 }) {
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedQuery = useDebounce(query, 300);
 
-  const filtered = query.trim()
-    ? participants.filter(
-        (p) =>
-          p.participant_name.toLowerCase().includes(query.toLowerCase()) ||
-          p.participant_email.toLowerCase().includes(query.toLowerCase())
+  const filtered = useMemo(() => {
+    if (!debouncedQuery.trim()) return participants;
+    const q = debouncedQuery.toLowerCase();
+    return participants.filter(
+      (p) =>
+        p.participant_name.toLowerCase().includes(q) ||
+        p.participant_email.toLowerCase().includes(q)
+    );
+  }, [participants, debouncedQuery]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => setPage(1), [debouncedQuery]);
+
+  const { pageItems, totalPages, page: safePage } = usePagination(
+    filtered,
+    PER_PAGE,
+    page
+  );
+
+  function exportCsv() {
+    const header = [
+      "Name",
+      "Email",
+      "Distance",
+      "Status",
+      "Waiver",
+      "Emergency Contact",
+      "Emergency Phone",
+      "Referral Code",
+      "Raffle (Referral)",
+      "Raffle (Main)",
+      "Bib Issued",
+      "Emergency Flag",
+    ];
+    const rows = filtered.map((p) => [
+      p.participant_name,
+      p.participant_email,
+      p.distance,
+      p.status,
+      p.waiver_accepted ? "Signed" : "Missing",
+      p.emergency_contact_name,
+      p.emergency_contact_phone,
+      p.referral_code,
+      String(p.raffle_referral),
+      String(p.raffle_main),
+      p.bib_issued ? "Yes" : "No",
+      p.emergency_flag ? "Yes" : "No",
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) =>
+        row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
       )
-    : participants;
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `event-day-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-6">
-      <Input
-        placeholder="Search by name or email…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="max-w-md"
-      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          placeholder="Search by name or email..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="max-w-md"
+        />
+        <Button variant="outline" onClick={exportCsv}>
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
+      </div>
 
       <p className="text-sm text-muted-foreground">
         Showing {filtered.length} of {participants.length} participants
@@ -61,28 +133,39 @@ export function EventDayClient({
           No participants match your search.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-3 text-left font-medium">Name</th>
-                <th className="px-3 py-3 text-left font-medium">Distance</th>
-                <th className="px-3 py-3 text-left font-medium">Status</th>
-                <th className="px-3 py-3 text-left font-medium">Waiver</th>
-                <th className="px-3 py-3 text-left font-medium">Emergency Contact</th>
-                <th className="px-3 py-3 text-left font-medium">Referral</th>
-                <th className="px-3 py-3 text-right font-medium">Raffle Tickets</th>
-                <th className="px-3 py-3 text-center font-medium">Bib</th>
-                <th className="px-3 py-3 text-center font-medium">Flag</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map((p) => (
-                <ParticipantRow key={p.id} participant={p} />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-muted">
+                <tr className="border-b">
+                  <th className="px-3 py-3 text-left font-medium">Name</th>
+                  <th className="px-3 py-3 text-left font-medium">Distance</th>
+                  <th className="px-3 py-3 text-left font-medium">Status</th>
+                  <th className="px-3 py-3 text-left font-medium">Waiver</th>
+                  <th className="px-3 py-3 text-left font-medium">
+                    Emergency Contact
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium">Referral</th>
+                  <th className="px-3 py-3 text-right font-medium">
+                    Raffle Tickets
+                  </th>
+                  <th className="px-3 py-3 text-center font-medium">Bib</th>
+                  <th className="px-3 py-3 text-center font-medium">Flag</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pageItems.map((p) => (
+                  <ParticipantRow key={p.id} participant={p} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </>
       )}
     </div>
   );
@@ -118,10 +201,14 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
   }
 
   return (
-    <tr className={`hover:bg-muted/30 ${emergencyFlag ? "bg-destructive/10" : ""}`}>
+    <tr
+      className={`hover:bg-muted/30 ${emergencyFlag ? "bg-destructive/10" : ""}`}
+    >
       <td className="px-3 py-3">
         <div className="font-medium">{p.participant_name}</div>
-        <div className="text-xs text-muted-foreground">{p.participant_email}</div>
+        <div className="text-xs text-muted-foreground">
+          {p.participant_email}
+        </div>
       </td>
       <td className="px-3 py-3">{p.distance}</td>
       <td className="px-3 py-3">
@@ -138,7 +225,7 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
               : ""}
           </span>
         ) : (
-          <span className="text-xs text-destructive font-medium">Missing</span>
+          <span className="text-xs font-medium text-destructive">Missing</span>
         )}
       </td>
       <td className="px-3 py-3">
@@ -147,8 +234,8 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
           {p.emergency_contact_phone}
         </div>
       </td>
-      <td className="px-3 py-3 text-xs font-mono">
-        {p.referral_code || "—"}
+      <td className="px-3 py-3 font-mono text-xs">
+        {p.referral_code || "\u2014"}
       </td>
       <td className="px-3 py-3 text-right tabular-nums">
         <span title="Referral tickets">{p.raffle_referral}</span>
