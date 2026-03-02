@@ -116,7 +116,7 @@ export default async function EventDetailPage({
               <EventSocialProof eventId={event.id} />
             </Suspense>
 
-            <Link href={`/register?event_id=${event.id}`}>
+            <Link href={`/register/${event.slug ?? slugify(event.title)}`}>
               <Button className="mt-4 w-full">Register Now</Button>
             </Link>
           </CardContent>

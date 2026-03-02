@@ -108,7 +108,7 @@ export default async function EventsPage() {
                     <Suspense>
                       <EventSocialProof eventId={event.id} />
                     </Suspense>
-                    <Link href={`/register?event_id=${event.id}`}>
+                    <Link href={`/register/${eventSlug}`}>
                       <Button className="mt-2 w-full" size="sm">
                         Register
                       </Button>
