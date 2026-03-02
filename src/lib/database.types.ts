@@ -318,6 +318,33 @@ export type Database = {
           },
         ]
       }
+      hhh_legacy_entries: {
+        Row: {
+          id: string
+          user_id: string
+          year: number
+          miles: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          year: number
+          miles?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          year?: number
+          miles?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           id: string
@@ -1091,6 +1118,18 @@ export type Database = {
       }
     }
     Views: {
+      hhh_legacy_leaderboard_v: {
+        Row: {
+          user_id: string | null
+          display_name: string | null
+          legacy_miles_total: number | null
+          auto_miles_total: number | null
+          total_miles: number | null
+          hhh_reg_count: number | null
+          last_hhh_year: number | null
+        }
+        Relationships: []
+      }
       referral_leaderboard_v: {
         Row: {
           avatar_url: string | null

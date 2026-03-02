@@ -50,6 +50,9 @@ export function UserMenu({
         <Link href="/profile">
           <DropdownMenuItem>Profile</DropdownMenuItem>
         </Link>
+        <Link href="/profile/hhh-legacy">
+          <DropdownMenuItem>HHH Legacy Miles</DropdownMenuItem>
+        </Link>
         <Link href="/checkin">
           <DropdownMenuItem>Check In</DropdownMenuItem>
         </Link>

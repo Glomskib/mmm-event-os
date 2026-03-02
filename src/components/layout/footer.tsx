@@ -33,6 +33,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/hhh-legacy" className="transition-colors hover:text-white">
+                  HHH Legacy Board
+                </Link>
+              </li>
+              <li>
                 <Link href="/wheels-and-reels" className="transition-colors hover:text-white">
                   Wheels &amp; Reels
                 </Link>
