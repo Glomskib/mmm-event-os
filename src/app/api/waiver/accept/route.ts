@@ -8,6 +8,7 @@ import {
   waiverText,
 } from "@/content/waiver/mmm_waiver_2026_v1";
 import { generateWaiverPdf } from "@/lib/waiver-pdf";
+import { sendWaiverEmail } from "@/lib/resend";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -148,6 +149,27 @@ export async function POST(request: Request) {
   } catch (pdfErr) {
     // PDF generation failure should not block registration
     console.error("Waiver PDF generation failed:", pdfErr);
+  }
+
+  // Send waiver email for free registrations
+  if (isFree) {
+    try {
+      const { data: signedUrl } = await admin.storage
+        .from("waivers")
+        .createSignedUrl(`${event.id}/${reg.id}.pdf`, 60 * 60 * 24 * 7);
+
+      if (signedUrl?.signedUrl) {
+        await sendWaiverEmail(participant_email.trim(), {
+          participantName: participant_name.trim(),
+          eventTitle: event.title,
+          distance,
+          signedAt: waiverAcceptedAt,
+          pdfUrl: signedUrl.signedUrl,
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send waiver email (free):", emailErr);
+    }
   }
 
   return NextResponse.json({

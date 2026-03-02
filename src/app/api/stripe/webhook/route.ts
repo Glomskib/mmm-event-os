@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendWaiverEmail } from "@/lib/resend";
 import Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -115,6 +116,41 @@ export async function POST(request: Request) {
               amount: 500,
             });
           }
+        }
+
+        // Send waiver confirmation email
+        try {
+          const { data: fullReg } = await supabase
+            .from("registrations")
+            .select(
+              "participant_name, participant_email, waiver_pdf_url, waiver_accepted_at, distance, event_id"
+            )
+            .eq("id", existing.id)
+            .single();
+
+          if (fullReg?.participant_email && fullReg?.waiver_pdf_url) {
+            const { data: evt } = await supabase
+              .from("events")
+              .select("title")
+              .eq("id", fullReg.event_id)
+              .single();
+
+            const { data: signedUrl } = await supabase.storage
+              .from("waivers")
+              .createSignedUrl(fullReg.waiver_pdf_url, 60 * 60 * 24 * 7);
+
+            if (signedUrl?.signedUrl) {
+              await sendWaiverEmail(fullReg.participant_email, {
+                participantName: fullReg.participant_name || "Participant",
+                eventTitle: evt?.title || "Event",
+                distance: fullReg.distance,
+                signedAt: fullReg.waiver_accepted_at || new Date().toISOString(),
+                pdfUrl: signedUrl.signedUrl,
+              });
+            }
+          }
+        } catch (emailErr) {
+          console.error("Failed to send waiver email (paid):", emailErr);
         }
 
         console.log(

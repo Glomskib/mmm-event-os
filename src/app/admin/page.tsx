@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar, Bike, Users, Image } from "lucide-react";
+import { Calendar, Bike, Users, Image, Download } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Admin | MMM Event OS" };
@@ -35,6 +35,12 @@ const adminCards = [
     description: "Review check-in photos.",
     icon: Image,
     href: "/admin/checkins",
+  },
+  {
+    title: "Exports",
+    description: "Download registration & emergency data.",
+    icon: Download,
+    href: "/admin/exports",
   },
 ];
 

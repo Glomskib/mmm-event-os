@@ -224,6 +224,11 @@ create_pending_reg() {
   "waiver_user_agent": "smoke-test/1.0",
   "waiver_version": "2026-v1",
   "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Smoke Test Runner",
+  "participant_email": "${email}",
+  "emergency_contact_name": "Emergency Contact",
+  "emergency_contact_phone": "555-000-1234",
   "referral_code": $([ -n "$referral_code" ] && echo "\"${referral_code}\"" || echo "null"),
   "email": "${email}"
 }
@@ -508,6 +513,11 @@ REG_FREE_ID=$(sb_insert "registrations" "$(cat <<EOF
   "waiver_user_agent": "smoke-test/1.0",
   "waiver_version": "2026-v1",
   "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Free Rider",
+  "participant_email": "free15@test.com",
+  "emergency_contact_name": "Free EC",
+  "emergency_contact_phone": "555-000-FREE",
   "email": "free15@test.com"
 }
 EOF
@@ -546,6 +556,11 @@ REG_FREEREF_ID=$(sb_insert "registrations" "$(cat <<EOF
   "waiver_ip": "127.0.0.1",
   "waiver_user_agent": "smoke-test/1.0",
   "waiver_version": "2026-v1",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Free Ref Rider",
+  "participant_email": "freeref@test.com",
+  "emergency_contact_name": "FreeRef EC",
+  "emergency_contact_phone": "555-000-FREF",
   "referral_code": "FREE_REF_CODE",
   "email": "freeref@test.com"
 }
@@ -585,6 +600,40 @@ if [ "$STATUS_W5" = "400" ]; then
   fi
 else
   fail "W5: Webhook waiver guard" "expected 400, got ${STATUS_W5}"
+fi
+
+# ============================================================
+# Test W6: Verify emergency contact + snapshot fields populated
+# ============================================================
+printf "\n${BOLD}[W6] Emergency contact + waiver snapshot fields populated${NC}\n"
+REG_W6_ID=$(create_pending_reg "$MMM_ORG_ID" "$HHH_EVENT_ID" "30 miles" 4899 "true" "" "w6@test.com")
+
+if [ -n "$REG_W6_ID" ]; then
+  REG_W6=$(sb_query "registrations" "select=participant_name,participant_email,emergency_contact_name,emergency_contact_phone,waiver_snapshot_text&id=eq.${REG_W6_ID}" | jq '.[0]')
+  W6_PNAME=$(echo "$REG_W6" | jq -r '.participant_name // empty')
+  W6_PEMAIL=$(echo "$REG_W6" | jq -r '.participant_email // empty')
+  W6_ECNAME=$(echo "$REG_W6" | jq -r '.emergency_contact_name // empty')
+  W6_ECPHONE=$(echo "$REG_W6" | jq -r '.emergency_contact_phone // empty')
+  W6_SNAPSHOT=$(echo "$REG_W6" | jq -r '.waiver_snapshot_text // empty')
+
+  W6_OK=true
+  if [ -z "$W6_PNAME" ] || [ -z "$W6_PEMAIL" ]; then
+    fail "W6: Participant fields" "name=${W6_PNAME}, email=${W6_PEMAIL}"
+    W6_OK=false
+  fi
+  if [ -z "$W6_ECNAME" ] || [ -z "$W6_ECPHONE" ]; then
+    fail "W6: Emergency contact fields" "ec_name=${W6_ECNAME}, ec_phone=${W6_ECPHONE}"
+    W6_OK=false
+  fi
+  if [ -z "$W6_SNAPSHOT" ]; then
+    fail "W6: Waiver snapshot" "waiver_snapshot_text is empty"
+    W6_OK=false
+  fi
+  if [ "$W6_OK" = "true" ]; then
+    pass "W6: Emergency contact + waiver snapshot fields populated"
+  fi
+else
+  fail "W6: Setup" "failed to create registration"
 fi
 
 # ============================================================
