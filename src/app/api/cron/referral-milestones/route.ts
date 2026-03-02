@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MILESTONE_TIERS, MILESTONE_TICKET_MAP } from "@/lib/referrals";
+import { MILESTONE_TIERS, MILESTONE_TICKET_MAP, assertMilestoneTickets } from "@/lib/referrals";
+
+// Fail fast if ticket map drifts from the documented program
+assertMilestoneTickets();
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -47,28 +50,30 @@ export async function POST(request: NextRequest) {
         } else {
           awarded++;
 
-          // Create raffle entry for newly awarded milestone
-          const tickets = MILESTONE_TICKET_MAP[tier.tier] ?? 1;
-          const sourceId = `referral_reward:${reward.id}`;
+          // Create raffle entry for newly awarded milestone (skip perk-only tiers)
+          const tickets = MILESTONE_TICKET_MAP[tier.tier] ?? 0;
+          if (tickets > 0) {
+            const sourceId = `referral_reward:${reward.id}`;
 
-          const { error: raffleError } = await admin
-            .from("raffle_entries")
-            .insert({
-              org_id: entry.org_id,
-              user_id: entry.user_id,
-              source: "referral",
-              source_id: sourceId,
-              tickets_count: tickets,
-              note: `${tier.label} milestone (${tier.count} referrals) — ${tickets} ticket${tickets > 1 ? "s" : ""}`,
-            });
+            const { error: raffleError } = await admin
+              .from("raffle_entries")
+              .insert({
+                org_id: entry.org_id,
+                user_id: entry.user_id,
+                source: "referral",
+                source_id: sourceId,
+                tickets_count: tickets,
+                note: `${tier.label} milestone (${tier.count} referrals) — ${tickets} ticket${tickets > 1 ? "s" : ""}`,
+              });
 
-          if (raffleError && raffleError.code !== "23505") {
-            console.error(
-              `Failed to insert raffle entry for ${entry.user_id}/${tier.tier}:`,
-              raffleError.message
-            );
-          } else if (!raffleError) {
-            raffleTicketsCreated += tickets;
+            if (raffleError && raffleError.code !== "23505") {
+              console.error(
+                `Failed to insert raffle entry for ${entry.user_id}/${tier.tier}:`,
+                raffleError.message
+              );
+            } else if (!raffleError) {
+              raffleTicketsCreated += tickets;
+            }
           }
         }
       }
