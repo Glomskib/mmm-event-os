@@ -181,6 +181,7 @@ export type Database = {
           image_url: string | null
           location: string | null
           org_id: string
+          series_key: string
           slug: string | null
           status: Database["public"]["Enums"]["event_status"]
           title: string
@@ -194,6 +195,7 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id: string
+          series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title: string
@@ -207,6 +209,7 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id?: string
+          series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title?: string
@@ -344,6 +347,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hhh_shopify_imports: {
+        Row: {
+          id: string
+          org_id: string
+          order_id: string
+          order_name: string | null
+          email: string
+          first_name: string | null
+          last_name: string | null
+          distance_label: string | null
+          miles: number
+          event_year: number
+          financial_status: string | null
+          imported_at: string
+          matched_user_id: string | null
+          matched_at: string | null
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          order_id: string
+          order_name?: string | null
+          email: string
+          first_name?: string | null
+          last_name?: string | null
+          distance_label?: string | null
+          miles?: number
+          event_year: number
+          financial_status?: string | null
+          imported_at?: string
+          matched_user_id?: string | null
+          matched_at?: string | null
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          order_id?: string
+          order_name?: string | null
+          email?: string
+          first_name?: string | null
+          last_name?: string | null
+          distance_label?: string | null
+          miles?: number
+          event_year?: number
+          financial_status?: string | null
+          imported_at?: string
+          matched_user_id?: string | null
+          matched_at?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hhh_shopify_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hhh_shopify_imports_matched_user_id_fkey"
+            columns: ["matched_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_assets: {
         Row: {
@@ -1122,11 +1194,13 @@ export type Database = {
         Row: {
           user_id: string | null
           display_name: string | null
-          legacy_miles_total: number | null
-          auto_miles_total: number | null
-          total_miles: number | null
+          email: string | null
+          manual_miles: number | null
+          imported_miles: number | null
+          auto_miles: number | null
           hhh_reg_count: number | null
           last_hhh_year: number | null
+          total_hhh_miles: number | null
         }
         Relationships: []
       }

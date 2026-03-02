@@ -12,10 +12,10 @@ export default async function HhhLegacyLeaderboardPage() {
   const { data: entries } = await admin
     .from("hhh_legacy_leaderboard_v")
     .select("*")
-    .order("total_miles", { ascending: false })
+    .order("total_hhh_miles", { ascending: false })
     .limit(100);
 
-  const rows = (entries ?? []).filter((r) => (r.total_miles ?? 0) > 0);
+  const rows = (entries ?? []).filter((r) => (r.total_hhh_miles ?? 0) > 0);
 
   return (
     <>

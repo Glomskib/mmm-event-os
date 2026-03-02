@@ -36,26 +36,23 @@ export default async function HhhLegacyPage() {
   );
   const legacyMilesTotal = [...legacyMap.values()].reduce((s, m) => s + m, 0);
 
-  // Fetch HHH auto registrations (year >= 2025, paid or free)
+  // Fetch HHH auto registrations (series_key='hhh', year >= 2025, paid or free)
   const { data: autoRegs } = await admin
     .from("registrations")
-    .select("distance, status, event_id, events!inner(title, slug, date)")
+    .select("distance, status, event_id, events!inner(title, date, series_key)")
     .eq("user_id", user.id)
+    .eq("events.series_key", "hhh")
     .in("status", ["paid", "free"]);
 
-  // Filter to HHH events and year >= 2025
   const hhhAutoRegs = (autoRegs ?? [])
     .map((r) => {
-      const ev = r.events as { title: string; slug: string | null; date: string };
-      const isHHH =
-        /Hancock Horizontal Hundred/i.test(ev.title) ||
-        (ev.slug ?? "").startsWith("hancock-horizontal-hundred");
+      const ev = r.events as { title: string; date: string; series_key: string };
       const year = new Date(ev.date).getFullYear();
       const milesMatch = r.distance?.match(/(\d+)/);
       const miles = milesMatch ? parseInt(milesMatch[1], 10) : 0;
-      return { title: ev.title, year, distance: r.distance, status: r.status, miles, isHHH };
+      return { title: ev.title, year, distance: r.distance ?? "", status: r.status, miles };
     })
-    .filter((r) => r.isHHH && r.year >= 2025);
+    .filter((r) => r.year >= 2025);
 
   const autoMilesTotal = hhhAutoRegs.reduce((s, r) => s + r.miles, 0);
   const totalMiles = legacyMilesTotal + autoMilesTotal;

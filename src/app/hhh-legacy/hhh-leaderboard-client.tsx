@@ -14,9 +14,11 @@ import { Search } from "lucide-react";
 interface LeaderboardRow {
   user_id: string | null;
   display_name: string | null;
-  legacy_miles_total: number | null;
-  auto_miles_total: number | null;
-  total_miles: number | null;
+  email: string | null;
+  manual_miles: number | null;
+  imported_miles: number | null;
+  auto_miles: number | null;
+  total_hhh_miles: number | null;
   hhh_reg_count: number | null;
   last_hhh_year: number | null;
 }
@@ -80,6 +82,9 @@ export function HhhLeaderboardClient({ rows }: Props) {
                       Legacy
                     </th>
                     <th className="hidden px-4 pb-3 pt-4 text-right font-medium sm:table-cell">
+                      Shopify
+                    </th>
+                    <th className="hidden px-4 pb-3 pt-4 text-right font-medium sm:table-cell">
                       Auto
                     </th>
                     <th className="hidden px-4 pb-3 pr-6 pt-4 text-right font-medium sm:table-cell">
@@ -90,7 +95,7 @@ export function HhhLeaderboardClient({ rows }: Props) {
                 <tbody>
                   {filtered.map((row, idx) => {
                     const rank = rows.indexOf(row) + 1;
-                    const total = row.total_miles ?? 0;
+                    const total = row.total_hhh_miles ?? 0;
                     const isTop3 = rank <= 3;
                     return (
                       <tr
@@ -133,10 +138,13 @@ export function HhhLeaderboardClient({ rows }: Props) {
                           </span>
                         </td>
                         <td className="hidden px-4 py-3 text-right text-muted-foreground sm:table-cell">
-                          {(row.legacy_miles_total ?? 0).toLocaleString()}
+                          {(row.manual_miles ?? 0).toLocaleString()}
                         </td>
                         <td className="hidden px-4 py-3 text-right text-muted-foreground sm:table-cell">
-                          {(row.auto_miles_total ?? 0).toLocaleString()}
+                          {(row.imported_miles ?? 0).toLocaleString()}
+                        </td>
+                        <td className="hidden px-4 py-3 text-right text-muted-foreground sm:table-cell">
+                          {(row.auto_miles ?? 0).toLocaleString()}
                         </td>
                         <td className="hidden px-4 py-3 pr-6 text-right text-muted-foreground sm:table-cell">
                           {row.hhh_reg_count ?? 0}
