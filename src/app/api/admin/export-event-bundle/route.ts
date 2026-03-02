@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import archiver from "archiver";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { getAdminOrNull } from "@/lib/require-admin";
 
 function toCsv(header: string[], rows: string[][]): string {
   return [header, ...rows]
@@ -12,6 +13,11 @@ function toCsv(header: string[], rows: string[][]): string {
 }
 
 export async function POST() {
+  const adminUser = await getAdminOrNull();
+  if (!adminUser) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const org = await getCurrentOrg();
   if (!org) {
     return NextResponse.json({ error: "Org not found" }, { status: 404 });
