@@ -68,9 +68,8 @@ export async function POST(request: Request) {
         );
       }
 
-      // If there's a referral code, create a referral credit
+      // If there's a referral code, create a referral credit (idempotent)
       if (meta.referral_code) {
-        // Look up the registration we just created
         const { data: reg } = await supabase
           .from("registrations")
           .select("id")
@@ -78,12 +77,21 @@ export async function POST(request: Request) {
           .single();
 
         if (reg) {
-          await supabase.from("referral_credits").insert({
-            org_id: meta.org_id,
-            registration_id: reg.id,
-            referral_code: meta.referral_code,
-            amount: 500, // $5.00 referral credit — adjust as needed
-          });
+          // Check if credit already exists to prevent duplicates on webhook retry
+          const { data: existing } = await supabase
+            .from("referral_credits")
+            .select("id")
+            .eq("registration_id", reg.id)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await supabase.from("referral_credits").insert({
+              org_id: meta.org_id,
+              registration_id: reg.id,
+              referral_code: meta.referral_code,
+              amount: 500, // $5.00 referral credit — adjust as needed
+            });
+          }
         }
       }
 
