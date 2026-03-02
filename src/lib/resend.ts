@@ -21,6 +21,9 @@ async function sendWithRetry(
 ): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   const maxRetries = 2;
+  const logMeta = { to: String(params.to), subject: params.subject, label };
+
+  writeSystemLog("email:send_attempt", `Attempting (${label})`, logMeta);
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -29,9 +32,8 @@ async function sendWithRetry(
         const statusCode = (error as { statusCode?: number }).statusCode;
         // Don't retry 4xx errors (bad request, auth, etc.)
         if (statusCode && statusCode >= 400 && statusCode < 500) {
-          writeSystemLog("email:send", `Failed (${label}): ${error.message}`, {
-            to: String(params.to),
-            subject: params.subject,
+          writeSystemLog("email:failed", `Failed (${label}): ${error.message}`, {
+            ...logMeta,
             attempt,
             statusCode,
           });
@@ -42,19 +44,14 @@ async function sendWithRetry(
           await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
           continue;
         }
-        writeSystemLog("email:send", `Failed after retries (${label}): ${error.message}`, {
-          to: String(params.to),
-          subject: params.subject,
+        writeSystemLog("email:failed", `Failed after retries (${label}): ${error.message}`, {
+          ...logMeta,
           attempts: attempt + 1,
         });
         return { success: false, error: error.message };
       }
 
-      writeSystemLog("email:send", `Sent (${label})`, {
-        to: String(params.to),
-        subject: params.subject,
-        attempt,
-      });
+      writeSystemLog("email:sent", `Sent (${label})`, { ...logMeta, attempt });
       return { success: true };
     } catch (err) {
       if (attempt < maxRetries) {
@@ -62,9 +59,8 @@ async function sendWithRetry(
         continue;
       }
       const msg = err instanceof Error ? err.message : "Unknown error";
-      writeSystemLog("email:send", `Exception after retries (${label}): ${msg}`, {
-        to: String(params.to),
-        subject: params.subject,
+      writeSystemLog("email:failed", `Exception after retries (${label}): ${msg}`, {
+        ...logMeta,
         attempts: attempt + 1,
       });
       return { success: false, error: msg };
@@ -173,12 +169,26 @@ interface WaiverEmailData {
   distance: string;
   signedAt: string;
   pdfUrl: string;
+  registrationId?: string;
 }
 
 export async function sendWaiverEmail(to: string, data: WaiverEmailData) {
-  const { participantName, eventTitle, distance, signedAt, pdfUrl } = data;
+  const { participantName, eventTitle, distance, signedAt, pdfUrl, registrationId } = data;
 
-  await sendWithRetry(
+  // Idempotency: skip if waiver email was already sent for this registration
+  if (registrationId) {
+    const admin = createAdminClient();
+    const { data: existing } = await admin
+      .from("system_logs")
+      .select("id")
+      .eq("type", "email:waiver_sent")
+      .eq("message", registrationId)
+      .limit(1);
+
+    if (existing && existing.length > 0) return;
+  }
+
+  const result = await sendWithRetry(
     {
       from: getFromAddress(),
       to,
@@ -196,6 +206,11 @@ export async function sendWaiverEmail(to: string, data: WaiverEmailData) {
     },
     "waiver"
   );
+
+  // Mark as sent for idempotency
+  if (result.success && registrationId) {
+    writeSystemLog("email:waiver_sent", registrationId, { to });
+  }
 
   // Internal copy
   if (process.env.MMM_ADMIN_EMAIL) {

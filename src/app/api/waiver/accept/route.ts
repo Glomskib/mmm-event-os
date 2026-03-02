@@ -165,6 +165,7 @@ export async function POST(request: Request) {
           distance,
           signedAt: waiverAcceptedAt,
           pdfUrl: signedUrl.signedUrl,
+          registrationId: reg.id,
         });
       }
     } catch (emailErr) {

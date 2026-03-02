@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Mail, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Send, CheckCircle2, AlertCircle, FlaskConical } from "lucide-react";
 
 interface SendResult {
   ok: boolean;
@@ -19,16 +19,25 @@ interface SendResult {
   skipped?: string;
 }
 
+interface DeliveryTestResult {
+  ok: boolean;
+  sentTo: string;
+  timestamp: string;
+}
+
 export function EmailControlsClient({
   sendTestAction,
   sendLiveAction,
+  sendDeliveryTestAction,
 }: {
   sendTestAction: () => Promise<SendResult>;
   sendLiveAction: () => Promise<SendResult>;
+  sendDeliveryTestAction?: () => Promise<DeliveryTestResult>;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [activeAction, setActiveAction] = useState<"test" | "live" | null>(null);
+  const [activeAction, setActiveAction] = useState<"test" | "live" | "delivery" | null>(null);
   const [result, setResult] = useState<{ type: "test" | "live"; data: SendResult } | null>(null);
+  const [deliveryResult, setDeliveryResult] = useState<DeliveryTestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleTest() {
@@ -55,6 +64,23 @@ export function EmailControlsClient({
       try {
         const data = await sendLiveAction();
         setResult({ type: "live", data });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      }
+      setActiveAction(null);
+    });
+  }
+
+  function handleDeliveryTest() {
+    if (!sendDeliveryTestAction) return;
+    setActiveAction("delivery");
+    setResult(null);
+    setDeliveryResult(null);
+    setError(null);
+    startTransition(async () => {
+      try {
+        const data = await sendDeliveryTestAction();
+        setDeliveryResult(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       }
@@ -126,7 +152,7 @@ export function EmailControlsClient({
             </div>
           )}
 
-          {error && (
+          {error && !deliveryResult && (
             <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>{error}</p>
@@ -134,6 +160,53 @@ export function EmailControlsClient({
           )}
         </CardContent>
       </Card>
+
+      {/* Delivery test */}
+      {sendDeliveryTestAction && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FlaskConical className="h-5 w-5" />
+              Delivery Test
+            </CardTitle>
+            <CardDescription>
+              Send a test email to the admin address to verify Resend is
+              configured and delivering.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              onClick={handleDeliveryTest}
+              disabled={isPending}
+            >
+              {isPending && activeAction === "delivery" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FlaskConical className="mr-2 h-4 w-4" />
+              )}
+              Send delivery test
+            </Button>
+
+            {deliveryResult && (
+              <div className="flex items-start gap-2 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  Sent to {deliveryResult.sentTo} at{" "}
+                  {new Date(deliveryResult.timestamp).toLocaleTimeString()}
+                </p>
+              </div>
+            )}
+
+            {error && activeAction === null && deliveryResult === null && (
+              <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -146,6 +146,7 @@ export async function POST(request: Request) {
                 distance: fullReg.distance,
                 signedAt: fullReg.waiver_accepted_at || new Date().toISOString(),
                 pdfUrl: signedUrl.signedUrl,
+                registrationId: existing.id,
               });
             }
           }
