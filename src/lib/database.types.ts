@@ -740,16 +740,3 @@ export const Constants = {
     },
   },
 } as const
-
-// Convenience row types
-export type Org = Tables<"orgs">;
-export type Profile = Tables<"profiles">;
-export type Event = Tables<"events">;
-export type RideSeries = Tables<"ride_series">;
-export type RideOccurrence = Tables<"ride_occurrences">;
-export type Checkin = Tables<"checkins">;
-export type RaffleEntry = Tables<"raffle_entries">;
-export type Registration = Tables<"registrations">;
-export type ReferralCredit = Tables<"referral_credits">;
-export type ReferralCode = Tables<"referral_codes">;
-export type ReferralReward = Tables<"referral_rewards">;
