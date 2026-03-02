@@ -245,6 +245,7 @@ export type Database = {
           waiver_accepted_at: string | null
           waiver_ip: string | null
           waiver_user_agent: string | null
+          waiver_text_hash: string | null
           waiver_version: string | null
         }
         Insert: {
@@ -265,6 +266,7 @@ export type Database = {
           waiver_accepted_at?: string | null
           waiver_ip?: string | null
           waiver_user_agent?: string | null
+          waiver_text_hash?: string | null
           waiver_version?: string | null
         }
         Update: {
@@ -285,6 +287,7 @@ export type Database = {
           waiver_accepted_at?: string | null
           waiver_ip?: string | null
           waiver_user_agent?: string | null
+          waiver_text_hash?: string | null
           waiver_version?: string | null
         }
         Relationships: [
