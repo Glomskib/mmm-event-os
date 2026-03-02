@@ -45,6 +45,7 @@ import {
   deleteContact,
   logInteraction,
   generateEmailDraft,
+  generateEmailDraftFromTemplate,
   exportSponsorsCsv,
 } from "./actions";
 
@@ -92,6 +93,14 @@ interface Interaction {
   created_by: string | null;
 }
 
+interface SponsorTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body_markdown: string;
+  tags: string[];
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUSES: SponsorStatus[] = [
@@ -126,11 +135,17 @@ export function SponsorsClient({
   sponsors: initialSponsors,
   contacts: initialContacts,
   interactions: initialInteractions,
+  templates: initialTemplates,
+  pipelineTotal,
+  pipelineGoal,
 }: {
   orgId: string;
   sponsors: Sponsor[];
   contacts: Contact[];
   interactions: Interaction[];
+  templates: SponsorTemplate[];
+  pipelineTotal: number;
+  pipelineGoal: number;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -168,7 +183,13 @@ export function SponsorsClient({
   // Export state
   const [exporting, setExporting] = useState(false);
 
+  // Template draft state
+  const [showDraftForm, setShowDraftForm] = useState(false);
+  const [draftTemplateId, setDraftTemplateId] = useState("");
+  const [draftContactId, setDraftContactId] = useState("");
+
   const sponsors = initialSponsors;
+  const templates = initialTemplates;
   const contacts = initialContacts;
   const interactions = initialInteractions;
 
@@ -347,6 +368,36 @@ export function SponsorsClient({
     });
   }
 
+  // ── Generate Draft from Template ──
+
+  function handleDraftFromTemplate() {
+    if (!selectedSponsor || !draftTemplateId) return;
+    const contact = contacts.find((c) => c.id === draftContactId);
+    if (!contact?.email) return;
+    startTransition(async () => {
+      const res = await generateEmailDraftFromTemplate({
+        sponsorId: selectedSponsor.id,
+        sponsorName: selectedSponsor.name,
+        committedAmount: selectedSponsor.committed_amount ?? 0,
+        contactName: contact.name,
+        contactEmail: contact.email!,
+        templateId: draftTemplateId,
+      });
+      if (res.ok) {
+        setResult({
+          type: "success",
+          message: `Draft created from template — view in Approvals.`,
+        });
+        clearResult();
+        setShowDraftForm(false);
+        setDraftTemplateId("");
+        setDraftContactId("");
+      } else {
+        setResult({ type: "error", message: res.error ?? "Failed" });
+      }
+    });
+  }
+
   // ── Export ──
 
   async function handleExport() {
@@ -420,6 +471,38 @@ export function SponsorsClient({
           <p>{result.message}</p>
         </div>
       )}
+
+      {/* Pipeline Progress Bar */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <span className="font-medium">Pipeline Goal</span>
+          <span className="text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              ${pipelineTotal.toLocaleString()}
+            </span>
+            {" / "}${pipelineGoal.toLocaleString()}
+          </span>
+        </div>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{
+              width: `${Math.min(100, (pipelineTotal / pipelineGoal) * 100).toFixed(1)}%`,
+            }}
+          />
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {((pipelineTotal / pipelineGoal) * 100).toFixed(0)}% of goal —
+          committed + paid sponsors only.{" "}
+          <a href="/admin/sponsors/followups" className="text-primary underline-offset-2 hover:underline">
+            View follow-ups
+          </a>
+          {" · "}
+          <a href="/admin/sponsors/templates" className="text-primary underline-offset-2 hover:underline">
+            Manage templates
+          </a>
+        </p>
+      </div>
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
@@ -926,6 +1009,78 @@ export function SponsorsClient({
                     </div>
                   )}
                 </div>
+
+                {/* Generate Email Draft from Template */}
+                {templates.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">Generate Email Draft</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowDraftForm(!showDraftForm)}
+                      >
+                        <FileText className="mr-1 h-3 w-3" />
+                        {showDraftForm ? "Cancel" : "From Template"}
+                      </Button>
+                    </div>
+                    {showDraftForm && (
+                      <div className="space-y-2 rounded-lg border p-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Template</Label>
+                          <select
+                            value={draftTemplateId}
+                            onChange={(e) => setDraftTemplateId(e.target.value)}
+                            className="w-full rounded-md border px-2 py-1.5 text-sm"
+                          >
+                            <option value="">Select a template…</option>
+                            {templates.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {contactsFor(selectedSponsor!.id).filter((c) => c.email).length > 0 && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">Contact</Label>
+                            <select
+                              value={draftContactId}
+                              onChange={(e) => setDraftContactId(e.target.value)}
+                              className="w-full rounded-md border px-2 py-1.5 text-sm"
+                            >
+                              <option value="">Select contact…</option>
+                              {contactsFor(selectedSponsor!.id)
+                                .filter((c) => c.email)
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name} ({c.email})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={handleDraftFromTemplate}
+                          disabled={
+                            isPending ||
+                            !draftTemplateId ||
+                            (!draftContactId &&
+                              contactsFor(selectedSponsor!.id).filter((c) => c.email).length > 0)
+                          }
+                        >
+                          {isPending ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileText className="mr-1.5 h-4 w-4" />
+                          )}
+                          Create Draft
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Log Interaction */}
                 <div>

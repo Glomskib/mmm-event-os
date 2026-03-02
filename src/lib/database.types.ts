@@ -962,6 +962,47 @@ export type Database = {
           },
         ]
       }
+      sponsor_email_templates: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+          subject: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          body_markdown: string
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+          subject: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+          subject?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_email_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_logs: {
         Row: {
           created_at: string

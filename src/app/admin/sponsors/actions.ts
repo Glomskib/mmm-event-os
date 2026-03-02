@@ -221,6 +221,156 @@ export async function generateEmailDraft(input: {
   return { ok: true, approvalId: data.id };
 }
 
+// ─── Email Draft from Template ────────────────────────────────────────────────
+
+/**
+ * Merge template variables into a body string.
+ * Supported: {{sponsor_name}}, {{contact_name}}, {{committed_amount}}, {{org_name}}
+ */
+function mergeTemplate(
+  body: string,
+  vars: Record<string, string>
+): string {
+  return body.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+}
+
+export async function generateEmailDraftFromTemplate(input: {
+  sponsorId: string;
+  sponsorName: string;
+  committedAmount: number;
+  contactName: string;
+  contactEmail: string;
+  templateId: string;
+}): Promise<{ ok: boolean; approvalId?: string; error?: string }> {
+  const admin = await getAdminOrNull();
+  if (!admin) return { ok: false, error: "Unauthorized" };
+
+  const org = await getCurrentOrg();
+  if (!org) return { ok: false, error: "Org not found" };
+
+  const db = createAdminClient();
+
+  const { data: tpl, error: tplErr } = await db
+    .from("sponsor_email_templates")
+    .select("name, subject, body_markdown")
+    .eq("id", input.templateId)
+    .eq("org_id", org.id)
+    .single();
+
+  if (tplErr || !tpl) return { ok: false, error: "Template not found" };
+
+  const vars: Record<string, string> = {
+    sponsor_name: input.sponsorName,
+    contact_name: input.contactName,
+    committed_amount: `$${(input.committedAmount ?? 0).toLocaleString()}`,
+    org_name: org.name ?? "Making Miles Matter",
+  };
+
+  const mergedSubject = mergeTemplate(tpl.subject, vars);
+  const mergedBody = mergeTemplate(tpl.body_markdown, vars);
+
+  const bodyJson: Record<string, unknown> = {
+    content: mergedBody,
+    subject: mergedSubject,
+    sponsorId: input.sponsorId,
+    contactEmail: input.contactEmail,
+    templateId: input.templateId,
+    templateName: tpl.name,
+  };
+
+  const { data, error } = await db
+    .from("approvals")
+    .insert({
+      org_id: org.id,
+      type: "email_draft",
+      status: "draft",
+      title: `${mergedSubject} — ${input.sponsorName}`,
+      body_json: bodyJson as Json,
+      created_by: admin.id,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, approvalId: data.id };
+}
+
+// ─── Template CRUD ────────────────────────────────────────────────────────────
+
+export async function addTemplate(input: {
+  name: string;
+  subject: string;
+  bodyMarkdown: string;
+  tags?: string[];
+}): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const admin = await getAdminOrNull();
+  if (!admin) return { ok: false, error: "Unauthorized" };
+
+  const org = await getCurrentOrg();
+  if (!org) return { ok: false, error: "Org not found" };
+
+  const db = createAdminClient();
+  const { data, error } = await db
+    .from("sponsor_email_templates")
+    .insert({
+      org_id: org.id,
+      name: input.name,
+      subject: input.subject,
+      body_markdown: input.bodyMarkdown,
+      tags: input.tags ?? [],
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: data.id };
+}
+
+export async function updateTemplate(
+  templateId: string,
+  updates: {
+    name?: string;
+    subject?: string;
+    bodyMarkdown?: string;
+    tags?: string[];
+  }
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await getAdminOrNull();
+  if (!admin) return { ok: false, error: "Unauthorized" };
+
+  const db = createAdminClient();
+  const updateObj: Record<string, unknown> = {};
+  if (updates.name !== undefined) updateObj.name = updates.name;
+  if (updates.subject !== undefined) updateObj.subject = updates.subject;
+  if (updates.bodyMarkdown !== undefined)
+    updateObj.body_markdown = updates.bodyMarkdown;
+  if (updates.tags !== undefined) updateObj.tags = updates.tags;
+
+  const { error } = await db
+    .from("sponsor_email_templates")
+    .update(updateObj)
+    .eq("id", templateId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function deleteTemplate(
+  templateId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const admin = await getAdminOrNull();
+  if (!admin) return { ok: false, error: "Unauthorized" };
+
+  const db = createAdminClient();
+  const { error } = await db
+    .from("sponsor_email_templates")
+    .delete()
+    .eq("id", templateId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 // ─── CSV Export ──────────────────────────────────────────────────────────────
 
 export async function exportSponsorsCsv(): Promise<string> {

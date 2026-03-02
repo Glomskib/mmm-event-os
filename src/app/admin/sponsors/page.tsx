@@ -5,6 +5,9 @@ import { SponsorsClient } from "./sponsors-client";
 
 export const metadata = { title: "Sponsors | Admin | MMM Event OS" };
 
+/** Pipeline fundraising goal in dollars */
+export const PIPELINE_GOAL_DOLLARS = 10_000;
+
 export default async function AdminSponsorsPage() {
   const org = await getCurrentOrg();
   if (!org) return <p className="p-8 text-center">Organization not found.</p>;
@@ -20,18 +23,33 @@ export default async function AdminSponsorsPage() {
 
   const sponsorIds = (sponsors ?? []).map((s) => s.id);
 
-  // Then fetch contacts + interactions in parallel
-  const [{ data: contacts }, { data: interactions }] =
-    sponsorIds.length > 0
-      ? await Promise.all([
-          db.from("sponsor_contacts").select("*").in("sponsor_id", sponsorIds),
-          db
+  // Fetch contacts, interactions, and templates in parallel
+  const [{ data: contacts }, { data: interactions }, { data: templates }] =
+    await Promise.all([
+      sponsorIds.length > 0
+        ? db
+            .from("sponsor_contacts")
+            .select("*")
+            .in("sponsor_id", sponsorIds)
+        : Promise.resolve({ data: [] }),
+      sponsorIds.length > 0
+        ? db
             .from("sponsor_interactions")
             .select("*")
             .in("sponsor_id", sponsorIds)
-            .order("occurred_at", { ascending: false }),
-        ])
-      : [{ data: [] }, { data: [] }];
+            .order("occurred_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      db
+        .from("sponsor_email_templates")
+        .select("id, name, subject, body_markdown, tags")
+        .eq("org_id", org.id)
+        .order("name"),
+    ]);
+
+  // Compute pipeline totals (committed + paid statuses)
+  const pipelineTotal = (sponsors ?? [])
+    .filter((s) => s.status === "committed" || s.status === "paid")
+    .reduce((sum, s) => sum + (s.committed_amount ?? 0), 0);
 
   return (
     <>
@@ -45,6 +63,9 @@ export default async function AdminSponsorsPage() {
           sponsors={sponsors ?? []}
           contacts={contacts ?? []}
           interactions={interactions ?? []}
+          templates={templates ?? []}
+          pipelineTotal={pipelineTotal}
+          pipelineGoal={PIPELINE_GOAL_DOLLARS}
         />
       </section>
     </>
