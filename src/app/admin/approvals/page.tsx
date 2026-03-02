@@ -9,13 +9,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export const metadata = { title: "Approvals | Admin | MMM Event OS" };
 
 const STATUS_ORDER = ["draft", "approved", "rejected", "sent"];
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const { type: typeFilter } = await searchParams;
   const org = await getCurrentOrg();
   if (!org) {
     return <div className="p-8 text-center text-red-600">Org not found</div>;
@@ -30,7 +36,18 @@ export default async function ApprovalsPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  const items = approvals ?? [];
+  const allItems = approvals ?? [];
+
+  // Compute type counts for filter tabs
+  const typeCounts = new Map<string, number>();
+  for (const item of allItems) {
+    typeCounts.set(item.type, (typeCounts.get(item.type) ?? 0) + 1);
+  }
+
+  // Apply type filter
+  const items = typeFilter
+    ? allItems.filter((a) => a.type === typeFilter)
+    : allItems;
 
   // Group by status
   const grouped: Record<string, typeof items> = {};
@@ -49,6 +66,26 @@ export default async function ApprovalsPage() {
       />
 
       <section className="mx-auto max-w-7xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
+        {/* Type filter tabs */}
+        {typeCounts.size > 1 && (
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/approvals">
+              <Badge variant={!typeFilter ? "default" : "outline"}>
+                All ({allItems.length})
+              </Badge>
+            </Link>
+            {[...typeCounts.entries()].map(([type, count]) => (
+              <Link key={type} href={`/admin/approvals?type=${type}`}>
+                <Badge
+                  variant={typeFilter === type ? "default" : "outline"}
+                >
+                  {type.replace(/_/g, " ")} ({count})
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        )}
+
         {/* Quick stats */}
         <div className="flex gap-4">
           {draftCount > 0 && (
@@ -70,7 +107,7 @@ export default async function ApprovalsPage() {
           {draftCount === 0 && approvedCount === 0 && (
             <p className="text-sm text-muted-foreground">
               No pending approvals. Drafts will appear here when cron jobs run
-              in approval mode.
+              or you create a social post draft.
             </p>
           )}
         </div>
@@ -159,8 +196,28 @@ function ApprovalRow({
     title: string;
     created_at: string;
     reviewer_notes: string | null;
+    body_json: unknown;
+    channel_targets: unknown;
   };
 }) {
+  // Extract social post preview text
+  const bodyJson = item.body_json as Record<string, unknown> | null;
+  const postText =
+    item.type === "social_post" && bodyJson?.content
+      ? String(bodyJson.content)
+      : null;
+
+  // Extract channel names for social posts
+  const channelTargets =
+    item.type === "social_post"
+      ? (item.channel_targets as Record<string, boolean> | null)
+      : null;
+  const activeChannels = channelTargets
+    ? Object.entries(channelTargets)
+        .filter(([, v]) => v)
+        .map(([k]) => k)
+    : [];
+
   return (
     <Link
       href={`/admin/approvals/${item.id}`}
@@ -185,6 +242,21 @@ function ApprovalRow({
             <span className="italic">Note: {item.reviewer_notes}</span>
           )}
         </div>
+        {/* Social post preview */}
+        {postText && (
+          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+            {postText}
+          </p>
+        )}
+        {activeChannels.length > 0 && (
+          <div className="mt-1.5 flex gap-1">
+            {activeChannels.map((ch) => (
+              <Badge key={ch} variant="secondary" className="text-[10px] px-1.5 py-0">
+                {ch}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
       <span className="ml-4 text-muted-foreground">&rarr;</span>
     </Link>

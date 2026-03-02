@@ -9,10 +9,76 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { ApprovalActions } from "./approval-actions";
 import Link from "next/link";
 
+/* eslint-disable @next/next/no-img-element */
+
 export const metadata = { title: "Approval Detail | Admin | MMM Event OS" };
+
+function SocialPreviewCard({
+  approval,
+}: {
+  approval: {
+    body_json: unknown;
+    channel_targets: unknown;
+    media_urls: string[] | null;
+    scheduled_for: string | null;
+    error_message: string | null;
+  };
+}) {
+  const bodyJson = approval.body_json as Record<string, unknown> | null;
+  const content = (bodyJson?.content as string) ?? "";
+  const channels = approval.channel_targets as Record<string, boolean> | null;
+  const selectedChannels = channels
+    ? Object.entries(channels)
+        .filter(([, v]) => v)
+        .map(([k]) => k)
+    : [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Social Post Preview</CardTitle>
+        <CardDescription>
+          Targets: {selectedChannels.join(", ") || "none selected"}
+          {approval.scheduled_for &&
+            ` — Scheduled for ${new Date(approval.scheduled_for).toLocaleString()}`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {approval.error_message && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+            Last error: {approval.error_message}
+          </div>
+        )}
+        <div className="whitespace-pre-wrap rounded-lg border bg-white p-4 text-sm">
+          {content || "(no content)"}
+        </div>
+        {approval.media_urls && approval.media_urls.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {approval.media_urls.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt={`Media ${i + 1}`}
+                className="h-24 w-24 rounded-md border object-cover"
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-1">
+          {selectedChannels.map((ch) => (
+            <Badge key={ch} variant="secondary">
+              {ch}
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default async function ApprovalDetailPage({
   params,
@@ -81,6 +147,11 @@ export default async function ApprovalDetailPage({
             <ApprovalActions id={approval.id} status={approval.status} />
           </CardContent>
         </Card>
+
+        {/* Social Post Preview */}
+        {approval.type === "social_post" && (
+          <SocialPreviewCard approval={approval} />
+        )}
 
         {/* Email Preview */}
         {approval.body_html && (
