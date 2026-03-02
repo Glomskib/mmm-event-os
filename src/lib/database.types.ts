@@ -178,6 +178,117 @@ export type Database = {
           },
         ]
       }
+      referral_credits: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          org_id: string
+          referral_code: string
+          referrer_user_id: string | null
+          registration_id: string
+          voided: boolean
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          org_id: string
+          referral_code: string
+          referrer_user_id?: string | null
+          registration_id: string
+          voided?: boolean
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          org_id?: string
+          referral_code?: string
+          referrer_user_id?: string | null
+          registration_id?: string
+          voided?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_credits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_credits_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registrations: {
+        Row: {
+          amount: number
+          created_at: string
+          distance: string
+          email: string | null
+          event_id: string
+          id: string
+          org_id: string
+          referral_code: string | null
+          status: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          distance: string
+          email?: string | null
+          event_id: string
+          id?: string
+          org_id: string
+          referral_code?: string | null
+          status?: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          distance?: string
+          email?: string | null
+          event_id?: string
+          id?: string
+          org_id?: string
+          referral_code?: string | null
+          status?: Database["public"]["Enums"]["registration_status"]
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ride_occurrences: {
         Row: {
           cancelled: boolean
@@ -276,6 +387,7 @@ export type Database = {
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
+      registration_status: "pending" | "paid" | "refunded" | "cancelled"
       ride_difficulty: "easy" | "moderate" | "hard"
       user_role: "admin" | "member"
     }
@@ -406,6 +518,7 @@ export const Constants = {
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
+      registration_status: ["pending", "paid", "refunded", "cancelled"],
       ride_difficulty: ["easy", "moderate", "hard"],
       user_role: ["admin", "member"],
     },
@@ -419,3 +532,5 @@ export type Event = Tables<"events">;
 export type RideSeries = Tables<"ride_series">;
 export type RideOccurrence = Tables<"ride_occurrences">;
 export type Checkin = Tables<"checkins">;
+export type Registration = Tables<"registrations">;
+export type ReferralCredit = Tables<"referral_credits">;
