@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { getFromAddress } from "@/lib/resend";
+import { createLogger } from "@/lib/logger";
 
 export const maxDuration = 60;
+
+const log = createLogger("cron:weekly-ride-email");
 
 const DAY_NAMES = [
   "Sunday",
@@ -27,6 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const timer = log.timed("execute");
   const testMode = request.nextUrl.searchParams.get("test") === "true";
 
   const admin = createAdminClient();
@@ -250,6 +254,8 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+
+  timer.end({ emailsSent: sent, emailErrors: errors.length, rideCount: rides.length });
 
   return NextResponse.json({
     ok: true,

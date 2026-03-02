@@ -3,8 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { MILESTONE_TIERS } from "@/lib/referrals";
 import { getFromAddress } from "@/lib/resend";
+import { createLogger } from "@/lib/logger";
 
 export const maxDuration = 60;
+
+const log = createLogger("cron:referral-weekly-email");
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -12,6 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const timer = log.timed("execute");
   const admin = createAdminClient();
   const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -126,6 +130,8 @@ export async function POST(request: NextRequest) {
       errors.push(`${email}: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
+
+  timer.end({ milestonesAwarded, emailsSent: sent, emailErrors: errors.length });
 
   return NextResponse.json({
     ok: true,

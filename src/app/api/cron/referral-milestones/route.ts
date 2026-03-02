@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MILESTONE_TIERS, MILESTONE_TICKET_MAP, assertMilestoneTickets } from "@/lib/referrals";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("cron:referral-milestones");
 
 // Fail fast if ticket map drifts from the documented program
 assertMilestoneTickets();
@@ -11,6 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const timer = log.timed("execute");
   const admin = createAdminClient();
 
   // Fetch all referrers from the leaderboard view (include org_id for raffle entries)
@@ -79,6 +83,8 @@ export async function POST(request: NextRequest) {
       }
     }
   }
+
+  timer.end({ awarded, raffleTicketsCreated });
 
   return NextResponse.json({ ok: true, awarded, raffleTicketsCreated });
 }
