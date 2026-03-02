@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       orgs: {
@@ -37,6 +37,7 @@ export interface Database {
           secondary_color?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -66,6 +67,15 @@ export interface Database {
           role?: "admin" | "member";
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       events: {
         Row: {
@@ -101,6 +111,15 @@ export interface Database {
           status?: "draft" | "published" | "cancelled";
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "events_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       ride_series: {
         Row: {
@@ -136,6 +155,15 @@ export interface Database {
           difficulty?: "easy" | "moderate" | "hard";
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "ride_series_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       ride_occurrences: {
         Row: {
@@ -165,6 +193,22 @@ export interface Database {
           note?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "ride_occurrences_series_id_fkey";
+            columns: ["series_id"];
+            isOneToOne: false;
+            referencedRelation: "ride_series";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ride_occurrences_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       checkins: {
         Row: {
@@ -194,6 +238,29 @@ export interface Database {
           photo_path?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "checkins_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_ride_occurrence_id_fkey";
+            columns: ["ride_occurrence_id"];
+            isOneToOne: false;
+            referencedRelation: "ride_occurrences";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;
@@ -203,5 +270,14 @@ export interface Database {
       event_status: "draft" | "published" | "cancelled";
       ride_difficulty: "easy" | "moderate" | "hard";
     };
+    CompositeTypes: Record<string, never>;
   };
-}
+};
+
+// Convenience row types
+export type Org = Database["public"]["Tables"]["orgs"]["Row"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Event = Database["public"]["Tables"]["events"]["Row"];
+export type RideSeries = Database["public"]["Tables"]["ride_series"]["Row"];
+export type RideOccurrence = Database["public"]["Tables"]["ride_occurrences"]["Row"];
+export type Checkin = Database["public"]["Tables"]["checkins"]["Row"];
