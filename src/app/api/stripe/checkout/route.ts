@@ -54,6 +54,28 @@ export async function POST(request: Request) {
     );
   }
 
+  // Idempotency guard: check for existing paid/free registration for same user+event+distance
+  if (reg.user_id) {
+    const { data: existingPaid } = await supabase
+      .from("registrations")
+      .select("id")
+      .eq("user_id", reg.user_id)
+      .eq("event_id", reg.event_id)
+      .eq("distance", reg.distance)
+      .in("status", ["paid", "free"])
+      .neq("id", reg.id)
+      .limit(1)
+      .single();
+
+    if (existingPaid) {
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      return NextResponse.json({
+        url: `${appUrl}/success?already_registered=true`,
+      });
+    }
+  }
+
   // Look up event title for the line item
   const { data: event } = await supabase
     .from("events")
