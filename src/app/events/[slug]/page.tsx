@@ -57,11 +57,16 @@ export default async function EventDetailPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: events } = await supabase
+  const { data: events, error: eventsError } = await supabase
     .from("events")
     .select("*")
     .eq("status", "published")
     .order("date", { ascending: true });
+
+  if (eventsError) {
+    console.error("[events/slug] events query failed:", eventsError.message);
+    throw new Error(`Database error: ${eventsError.message}`);
+  }
 
   const event = events?.find((e) => (e.slug ?? slugify(e.title)) === slug);
   if (!event) notFound();

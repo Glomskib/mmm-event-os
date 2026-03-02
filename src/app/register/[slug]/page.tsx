@@ -36,10 +36,16 @@ export default async function RegisterWizardPage({
 
   const supabase = await createClient();
 
-  const { data: events } = await supabase
+  const { data: events, error: eventsError } = await supabase
     .from("events")
     .select("id, title, slug, date, location, description, status")
     .eq("status", "published");
+
+  // Surface DB errors as 500 rather than silently 404ing (e.g. missing migrations)
+  if (eventsError) {
+    console.error("[register/slug] events query failed:", eventsError.message);
+    throw new Error(`Database error: ${eventsError.message}`);
+  }
 
   const event = events?.find((e) => (e.slug ?? slugify(e.title)) === slug);
   if (!event) notFound();
