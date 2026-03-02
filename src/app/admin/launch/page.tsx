@@ -128,14 +128,15 @@ export default async function LaunchPage() {
     .in("status", ["draft", "published"]);
 
   const eventTitles = (events ?? []).map((e) => e.title);
-  const hasHHH = eventTitles.some((t) => /Houghton Hundred/i.test(t));
-  const hasFFF = eventTitles.some((t) => /Fun Friday Fifty/i.test(t));
+  const hasHHH = eventTitles.some((t) => /Hancock Horizontal Hundred 2026/i.test(t));
+  const hasFFF = eventTitles.some((t) => /Findlay Further Fondo/i.test(t));
   const hasEvents = hasHHH || hasFFF;
   checks.push({
     label: "Events exist (HHH / FFF)",
     passed: hasEvents,
-    detail: [hasHHH && "HHH", hasFFF && "FFF"].filter(Boolean).join(", ") ||
-      "No HHH or FFF events found",
+    detail: [hasHHH && "Hancock Horizontal Hundred 2026", hasFFF && "Findlay Further Fondo"]
+      .filter(Boolean)
+      .join(", ") || "No HHH or FFF events found",
   });
 
   const allPassed = checks.every((c) => c.passed);

@@ -25,8 +25,8 @@ export const MARKETING_INCENTIVES: MarketingIncentive[] = [
     deadlineIso: "2026-04-01T23:59:59",
   },
   {
-    pattern: /Hancock Horizontal Hundred/i,
-    eventSlug: "hancock-horizontal-hundred",
+    pattern: /Hancock Horizontal Hundred 2026/i,
+    eventSlug: "hancock-horizontal-hundred-2026",
     title:
       "Register by May 31 → FREE custom HHH socks + 5 raffle entries (Main Raffle)",
     perks: [

@@ -260,7 +260,7 @@ fi
 # Seed: create FFF event if it doesn't exist
 # ============================================================
 log "Checking for FFF event…"
-FFF_EVENT=$(sb_query "events" "select=id&title=eq.Fun%20Friday%20Fifty" | jq -r '.[0].id // empty')
+FFF_EVENT=$(sb_query "events" "select=id&title=eq.Findlay%20Further%20Fondo" | jq -r '.[0].id // empty')
 
 if [ -z "$FFF_EVENT" ]; then
   log "Seeding FFF event under MMM org…"
@@ -269,10 +269,10 @@ if [ -z "$FFF_EVENT" ]; then
 {
   "id": "${FFF_EVENT_ID}",
   "org_id": "${MMM_ORG_ID}",
-  "title": "Fun Friday Fifty",
-  "description": "A 50-mile charity ride",
-  "date": "2026-06-20T08:00:00Z",
-  "location": "Hancock, MI",
+  "title": "Findlay Further Fondo",
+  "description": "55-60 mile round trip ride from False Chord Brewing to Arlyn's Good Beer",
+  "date": "2026-04-25T12:00:00Z",
+  "location": "False Chord Brewing, Findlay, OH",
   "status": "published"
 }
 EOF
@@ -411,7 +411,7 @@ fi
 # ============================================================
 # Test D: FFF — $35.00
 # ============================================================
-printf "\n${BOLD}[D] Fun Friday Fifty — waiver → webhook → paid (\$35.00)${NC}\n"
+printf "\n${BOLD}[D] Findlay Further Fondo — waiver → webhook → paid (\$35.00)${NC}\n"
 CS_D="cs_smoke_d_${RUN_TAG}"
 PI_D="pi_smoke_d_${RUN_TAG}"
 REG_D_ID=$(create_pending_reg "$MMM_ORG_ID" "$FFF_EVENT" "50 miles" 3500)

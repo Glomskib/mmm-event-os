@@ -27,7 +27,7 @@ const EARLY_BONUS_CONFIGS: Record<string, EarlyBonusConfig> = {
     deadlineUtc: "2026-04-02T04:59:59Z",
     mainTicketsTarget: 1,
   },
-  "hancock-horizontal-hundred": {
+  "hancock-horizontal-hundred-2026": {
     deadlineUtc: "2026-06-01T03:59:59Z",
     mainTicketsTarget: 5,
     merchPerk: "hhh_socks_2026",

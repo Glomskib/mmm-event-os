@@ -13,7 +13,7 @@ export interface IncentiveConfig {
 
 export const INCENTIVE_CONFIGS: IncentiveConfig[] = [
   {
-    pattern: /Hancock Horizontal Hundred/i,
+    pattern: /Hancock Horizontal Hundred 2026/i,
     title: "Early-Bird Pricing Ends Soon",
     deadline: "2026-05-01T23:59:59",
     perks: [
@@ -21,7 +21,7 @@ export const INCENTIVE_CONFIGS: IncentiveConfig[] = [
       "Free 15-mile distance included",
       "Referral rewards: earn raffle tickets for every friend you bring",
     ],
-    eventSlug: "hancock-horizontal-hundred",
+    eventSlug: "hancock-horizontal-hundred-2026",
   },
   {
     pattern: /Findlay Further Fondo/i,

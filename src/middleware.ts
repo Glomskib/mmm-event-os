@@ -4,7 +4,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 // 301 redirects for old event slugs that were renamed
 const SLUG_REDIRECTS: Record<string, string> = {
   "/events/fun-friday-fifty": "/events/findlay-further-fondo",
-  "/events/houghton-hundred": "/events/hancock-horizontal-hundred",
+  "/events/houghton-hundred": "/events/hancock-horizontal-hundred-2026",
+  "/events/hancock-horizontal-hundred": "/events/hancock-horizontal-hundred-2026",
 };
 
 export async function middleware(request: NextRequest) {

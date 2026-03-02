@@ -11,7 +11,7 @@ type PricingRule = {
 
 const PRICING_RULES: PricingRule[] = [
   {
-    pattern: /Houghton Hundred/i,
+    pattern: /Hancock Horizontal Hundred 2026/i,
     prices: {
       "15 miles": 0,
       "30 miles": 4899,
@@ -20,7 +20,7 @@ const PRICING_RULES: PricingRule[] = [
     },
   },
   {
-    pattern: /Fun Friday Fifty/i,
+    pattern: /Findlay Further Fondo/i,
     defaultPrice: 3500,
     prices: {},
   },
