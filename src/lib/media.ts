@@ -19,6 +19,9 @@ export type GroupedMedia = {
   inline_section: MediaAsset[];
   background_loop: MediaAsset[];
   sponsor_showcase: MediaAsset[];
+  elevation_chart: MediaAsset[];
+  route_embed: MediaAsset[];
+  route_gpx: MediaAsset[];
 };
 
 const fetchEventMedia = unstable_cache(
@@ -50,6 +53,9 @@ export async function getEventMedia(eventId: string): Promise<GroupedMedia> {
     inline_section: all.filter((a) => a.placement === "inline_section"),
     background_loop: all.filter((a) => a.placement === "background_loop"),
     sponsor_showcase: all.filter((a) => a.placement === "sponsor_showcase"),
+    elevation_chart: all.filter((a) => a.placement === "elevation_chart"),
+    route_embed: all.filter((a) => a.placement === "route_embed"),
+    route_gpx: all.filter((a) => a.placement === "route_gpx"),
   };
 }
 

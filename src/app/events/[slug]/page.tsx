@@ -24,6 +24,7 @@ import { LegacyStrip } from "@/components/event/legacy-strip";
 import { CTABand } from "@/components/event/cta-band";
 import { SponsorsSection } from "@/components/event/sponsors-section";
 import { RouteSection } from "@/components/event/route-section";
+import { getDistances } from "@/lib/pricing";
 import { TestimonialsSection } from "@/components/event/testimonials-section";
 import { RiderStats } from "@/components/event/rider-stats";
 import { EventCountdown } from "@/components/event/event-countdown";
@@ -68,6 +69,7 @@ export default async function EventDetailPage({
   const incentive = getMarketingIncentive(event.title);
   const eventSlug = event.slug ?? slugify(event.title);
   const eventYear = new Date(event.date).getFullYear();
+  const distances = getDistances(event.title).map((d) => d.distance);
 
   // All data fetched in parallel
   const [media, org, regStats] = await Promise.all([
@@ -201,8 +203,17 @@ export default async function EventDetailPage({
           />
         )}
 
-        {/* Route preview */}
-        <RouteSection assets={media.route_preview} />
+        {/* Route experience */}
+        <RouteSection
+          distances={distances}
+          elevationGain={event.elevation_gain ?? null}
+          aidStations={event.aid_stations ?? null}
+          terrainType={event.terrain_type ?? null}
+          elevationChartAssets={media.elevation_chart}
+          routeEmbedAssets={media.route_embed}
+          gpxAssets={media.route_gpx}
+          legacyPreviewAssets={media.route_preview}
+        />
 
         {/* Photo gallery */}
         {media.gallery.length > 0 && (

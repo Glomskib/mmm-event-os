@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminOrNull } from "@/lib/require-admin";
 
-const ALLOWED_TYPES = [
+const ALLOWED_IMAGE_VIDEO_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -12,6 +12,11 @@ const ALLOWED_TYPES = [
 ];
 
 const MAX_SIZE = 25 * 1024 * 1024; // 25 MB
+const GPX_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+
+function isGpxFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith(".gpx");
+}
 
 export async function POST(request: Request) {
   const admin = await getAdminOrNull();
@@ -40,16 +45,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "placement is required" }, { status: 400 });
   }
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  const gpx = isGpxFile(file);
+
+  if (!gpx && !ALLOWED_IMAGE_VIDEO_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: "Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, MP4, WebM." },
+      { error: "Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, MP4, WebM, GPX." },
       { status: 400 }
     );
   }
 
-  if (file.size > MAX_SIZE) {
+  const sizeLimit = gpx ? GPX_MAX_SIZE : MAX_SIZE;
+  if (file.size > sizeLimit) {
     return NextResponse.json(
-      { error: "File too large. Maximum 25 MB." },
+      { error: `File too large. Maximum ${gpx ? "10" : "25"} MB.` },
       { status: 400 }
     );
   }
@@ -57,13 +65,18 @@ export async function POST(request: Request) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storagePath = `events/${entityId}/${placement}/${Date.now()}_${safeName}`;
 
+  // GPX files are XML text; use explicit content type
+  const contentType = gpx
+    ? "application/gpx+xml"
+    : file.type;
+
   const db = createAdminClient();
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const { error: uploadError } = await db.storage
     .from("media")
     .upload(storagePath, buffer, {
-      contentType: file.type,
+      contentType,
       upsert: false,
     });
 
@@ -73,9 +86,11 @@ export async function POST(request: Request) {
 
   const { data: urlData } = db.storage.from("media").getPublicUrl(storagePath);
 
+  const kind = gpx ? "file" : file.type.startsWith("video/") ? "video" : "image";
+
   return NextResponse.json({
     url: urlData.publicUrl,
     path: storagePath,
-    kind: file.type.startsWith("video/") ? "video" : "image",
+    kind,
   });
 }

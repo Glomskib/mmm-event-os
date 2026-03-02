@@ -42,7 +42,10 @@ type PlacementTab =
   | "testimonial"
   | "inline_section"
   | "background_loop"
-  | "sponsor_showcase";
+  | "sponsor_showcase"
+  | "elevation_chart"
+  | "route_embed"
+  | "route_gpx";
 
 const PLACEMENT_LABELS: Record<PlacementTab, string> = {
   hero: "Hero",
@@ -50,11 +53,14 @@ const PLACEMENT_LABELS: Record<PlacementTab, string> = {
   section: "Highlights",
   banner: "Banner",
   hero_secondary: "Hero 2nd",
-  route_preview: "Route",
+  route_preview: "Route (legacy)",
   testimonial: "Testimonial",
   inline_section: "Inline",
   background_loop: "BG Loop",
   sponsor_showcase: "Sponsors",
+  elevation_chart: "Elev. Chart",
+  route_embed: "Route Map",
+  route_gpx: "GPX File",
 };
 
 interface Props {
@@ -121,7 +127,7 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
 
       const result = await createMediaAsset({
         entityId: eventId,
-        kind: (data.kind as "image" | "video") ?? "image",
+        kind: (data.kind as "image" | "video" | "file") ?? "image",
         placement: activeTab,
         url: data.url as string,
         title: uploadTitle || undefined,
@@ -275,7 +281,7 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
 
         {showExtendedTabs && (
           <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1">
-            {(["hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase"] as PlacementTab[]).map((tab) => {
+            {(["hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase", "elevation_chart", "route_embed", "route_gpx"] as PlacementTab[]).map((tab) => {
               const count = media.filter((a) => a.placement === tab).length;
               return (
                 <button
@@ -309,13 +315,21 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
               <CardTitle className="text-sm">
                 Upload to {PLACEMENT_LABELS[activeTab]}
               </CardTitle>
-              <CardDescription>JPEG, PNG, WebP, GIF, MP4, WebM · max 25 MB</CardDescription>
+              <CardDescription>
+                {activeTab === "route_gpx"
+                  ? "GPX file · max 10 MB"
+                  : "JPEG, PNG, WebP, GIF, MP4, WebM · max 25 MB"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+                accept={
+                  activeTab === "route_gpx"
+                    ? ".gpx,application/gpx+xml"
+                    : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+                }
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-primary file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary-foreground"
               />
               <Input
@@ -388,11 +402,13 @@ export function MediaClient({ events, selectedEventId, initialMedia }: Props) {
                     <option value="section">Highlights</option>
                     <option value="banner">Banner</option>
                     <option value="hero_secondary">Hero 2nd</option>
-                    <option value="route_preview">Route</option>
+                    <option value="route_preview">Route (legacy)</option>
                     <option value="testimonial">Testimonial</option>
                     <option value="inline_section">Inline</option>
                     <option value="background_loop">BG Loop</option>
                     <option value="sponsor_showcase">Sponsors</option>
+                    <option value="elevation_chart">Elev. Chart</option>
+                    <option value="route_embed">Route Map</option>
                   </select>
                 </div>
                 <Button
@@ -502,7 +518,13 @@ function AssetRow({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            {asset.kind === "video" ? "🎬" : asset.kind === "embed" ? "📺" : "📷"}
+            {asset.kind === "video"
+              ? "🎬"
+              : asset.kind === "embed"
+              ? "📺"
+              : asset.kind === "file"
+              ? "📎"
+              : "📷"}
           </div>
         )}
       </div>

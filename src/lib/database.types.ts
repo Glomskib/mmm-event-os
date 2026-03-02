@@ -173,11 +173,13 @@ export type Database = {
       }
       events: {
         Row: {
+          aid_stations: number | null
           capacity: number | null
           created_at: string
           date: string
           description: string | null
           early_bird_deadline: string | null
+          elevation_gain: number | null
           id: string
           image_url: string | null
           location: string | null
@@ -186,14 +188,17 @@ export type Database = {
           series_key: string
           slug: string | null
           status: Database["public"]["Enums"]["event_status"]
+          terrain_type: string | null
           title: string
         }
         Insert: {
+          aid_stations?: number | null
           capacity?: number | null
           created_at?: string
           date: string
           description?: string | null
           early_bird_deadline?: string | null
+          elevation_gain?: number | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -202,14 +207,17 @@ export type Database = {
           series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
+          terrain_type?: string | null
           title: string
         }
         Update: {
+          aid_stations?: number | null
           capacity?: number | null
           created_at?: string
           date?: string
           description?: string | null
           early_bird_deadline?: string | null
+          elevation_gain?: number | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -218,6 +226,7 @@ export type Database = {
           series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
+          terrain_type?: string | null
           title?: string
         }
         Relationships: [
@@ -1242,7 +1251,7 @@ export type Database = {
     Enums: {
       event_status: "draft" | "published" | "cancelled"
       media_entity_type: "event" | "ride_series" | "ride_occurrence" | "sponsor" | "page"
-      media_kind: "image" | "video" | "embed"
+      media_kind: "image" | "video" | "embed" | "file"
       media_placement:
         | "hero"
         | "gallery"
@@ -1254,6 +1263,9 @@ export type Database = {
         | "inline_section"
         | "background_loop"
         | "sponsor_showcase"
+        | "elevation_chart"
+        | "route_embed"
+        | "route_gpx"
       raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event" | "early_bonus"
       registration_status:
         | "pending"
@@ -1403,8 +1415,8 @@ export const Constants = {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
       media_entity_type: ["event", "ride_series", "ride_occurrence", "sponsor", "page"],
-      media_kind: ["image", "video", "embed"],
-      media_placement: ["hero", "gallery", "section", "banner", "hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase"],
+      media_kind: ["image", "video", "embed", "file"],
+      media_placement: ["hero", "gallery", "section", "banner", "hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase", "elevation_chart", "route_embed", "route_gpx"],
       raffle_entry_source: ["shop_ride", "referral", "bonus", "event", "early_bonus"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
