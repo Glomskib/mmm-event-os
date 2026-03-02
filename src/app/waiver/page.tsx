@@ -13,6 +13,13 @@ import {
 
 type DistanceOption = { distance: string; price: number };
 
+const isDev = process.env.NODE_ENV === "development";
+
+function FieldError({ show, message }: { show: boolean; message: string }) {
+  if (!show) return null;
+  return <p className="mt-1 text-xs text-red-600">{message}</p>;
+}
+
 export default function WaiverPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +35,10 @@ export default function WaiverPage() {
   const [isChecked, setIsChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Dev-only scroll gate bypass
+  const [devBypassScroll, setDevBypassScroll] = useState(false);
 
   // Event info + distance selection
   const [eventTitle, setEventTitle] = useState<string | null>(null);
@@ -41,16 +52,20 @@ export default function WaiverPage() {
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
 
-  // Auto-fill from profile
+  // Auto-fill from profile (gracefully handles 401 / missing data)
   useEffect(() => {
     fetch("/api/profile")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) return null;
+        return r.json();
+      })
       .then((data) => {
+        if (!data) return;
         if (data.full_name) setParticipantName(data.full_name);
         if (data.email) setParticipantEmail(data.email);
       })
       .catch(() => {
-        // Not logged in or profile fetch failed — fields stay empty
+        // Not logged in or profile fetch failed — fields stay empty for manual entry
       });
   }, []);
 
@@ -78,7 +93,6 @@ export default function WaiverPage() {
         } else {
           setEventTitle(data.title);
           setDistances(data.distances ?? []);
-          // If distance param was provided or only one option, auto-select
           if (distanceParam) {
             setSelectedDistance(distanceParam);
           } else if (data.distances?.length === 1) {
@@ -109,21 +123,70 @@ export default function WaiverPage() {
     }
   }, [loading]);
 
+  const scrollGatePassed = hasScrolledToBottom || devBypassScroll;
+
+  // Inline validation
+  const validEmail =
+    participantEmail.trim() === "" ||
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participantEmail.trim());
+  const validPhone =
+    emergencyContactPhone.trim() === "" ||
+    emergencyContactPhone.trim().replace(/\D/g, "").length >= 7;
+
+  const fieldErrors = {
+    participantName:
+      touched.participantName && !participantName.trim()
+        ? "Full name is required."
+        : null,
+    participantEmail:
+      touched.participantEmail && !participantEmail.trim()
+        ? "Email is required."
+        : touched.participantEmail && !validEmail
+          ? "Enter a valid email address."
+          : null,
+    emergencyContactName:
+      touched.emergencyContactName && !emergencyContactName.trim()
+        ? "Emergency contact name is required."
+        : null,
+    emergencyContactPhone:
+      touched.emergencyContactPhone && !emergencyContactPhone.trim()
+        ? "Emergency contact phone is required."
+        : touched.emergencyContactPhone && !validPhone
+          ? "Enter a valid phone number."
+          : null,
+  };
+
   const fieldsComplete =
     participantName.trim() !== "" &&
     participantEmail.trim() !== "" &&
+    validEmail &&
     emergencyContactName.trim() !== "" &&
-    emergencyContactPhone.trim() !== "";
+    emergencyContactPhone.trim() !== "" &&
+    validPhone;
 
   const canSubmit =
-    hasScrolledToBottom &&
+    scrollGatePassed &&
     isChecked &&
     fieldsComplete &&
     !isSubmitting &&
     !!selectedDistance &&
     !!eventId;
 
+  function markTouched(field: string) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  function touchAll() {
+    setTouched({
+      participantName: true,
+      participantEmail: true,
+      emergencyContactName: true,
+      emergencyContactPhone: true,
+    });
+  }
+
   async function handleAccept() {
+    touchAll();
     if (!canSubmit) return;
     setIsSubmitting(true);
     setError(null);
@@ -145,7 +208,11 @@ export default function WaiverPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong.");
+        if (isDev) console.error("Waiver accept error:", res.status, data);
+        setError(
+          data.error ||
+            `Registration failed (${res.status}). Please try again.`
+        );
         setIsSubmitting(false);
         return;
       }
@@ -166,14 +233,23 @@ export default function WaiverPage() {
 
       const checkoutData = await checkoutRes.json();
       if (!checkoutRes.ok) {
-        setError(checkoutData.error || "Checkout failed.");
+        if (isDev)
+          console.error(
+            "Stripe checkout error:",
+            checkoutRes.status,
+            checkoutData
+          );
+        setError(
+          checkoutData.error ||
+            `Checkout failed (${checkoutRes.status}). Your registration was saved — please try again or contact us.`
+        );
         setIsSubmitting(false);
         return;
       }
 
       window.location.href = checkoutData.url;
     } catch {
-      setError("Network error. Please try again.");
+      setError("Network error. Please check your connection and try again.");
       setIsSubmitting(false);
     }
   }
@@ -224,6 +300,13 @@ export default function WaiverPage() {
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Error banner */}
+          {error && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {error}
+            </div>
+          )}
+
           {/* Distance selector (if multiple distances and none pre-selected) */}
           {distances.length > 1 && !distanceParam && (
             <div className="space-y-2">
@@ -268,8 +351,13 @@ export default function WaiverPage() {
                   required
                   value={participantName}
                   onChange={(e) => setParticipantName(e.target.value)}
+                  onBlur={() => markTouched("participantName")}
                   placeholder="Jane Doe"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.participantName ? "border-red-400" : ""}`}
+                />
+                <FieldError
+                  show={!!fieldErrors.participantName}
+                  message={fieldErrors.participantName ?? ""}
                 />
               </div>
               <div className="space-y-1">
@@ -282,8 +370,13 @@ export default function WaiverPage() {
                   required
                   value={participantEmail}
                   onChange={(e) => setParticipantEmail(e.target.value)}
+                  onBlur={() => markTouched("participantEmail")}
                   placeholder="jane@example.com"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.participantEmail ? "border-red-400" : ""}`}
+                />
+                <FieldError
+                  show={!!fieldErrors.participantEmail}
+                  message={fieldErrors.participantEmail ?? ""}
                 />
               </div>
             </div>
@@ -303,8 +396,13 @@ export default function WaiverPage() {
                   required
                   value={emergencyContactName}
                   onChange={(e) => setEmergencyContactName(e.target.value)}
+                  onBlur={() => markTouched("emergencyContactName")}
                   placeholder="John Doe"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.emergencyContactName ? "border-red-400" : ""}`}
+                />
+                <FieldError
+                  show={!!fieldErrors.emergencyContactName}
+                  message={fieldErrors.emergencyContactName ?? ""}
                 />
               </div>
               <div className="space-y-1">
@@ -317,8 +415,13 @@ export default function WaiverPage() {
                   required
                   value={emergencyContactPhone}
                   onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                  onBlur={() => markTouched("emergencyContactPhone")}
                   placeholder="(555) 123-4567"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${fieldErrors.emergencyContactPhone ? "border-red-400" : ""}`}
+                />
+                <FieldError
+                  show={!!fieldErrors.emergencyContactPhone}
+                  message={fieldErrors.emergencyContactPhone ?? ""}
                 />
               </div>
             </div>
@@ -328,28 +431,42 @@ export default function WaiverPage() {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="h-80 overflow-y-auto rounded-lg border bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap"
+            className="max-h-[420px] overflow-y-auto rounded-lg border bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30"
+            style={{ overscrollBehavior: "contain" }}
           >
             {waiverText}
           </div>
 
-          {!hasScrolledToBottom && (
+          {!scrollGatePassed && (
             <p className="text-xs text-amber-600">
-              Scroll to the bottom of the waiver to continue.
+              Scroll to the bottom of the waiver to enable the agreement
+              checkbox.
             </p>
+          )}
+
+          {/* Dev-only scroll bypass */}
+          {isDev && !hasScrolledToBottom && (
+            <label className="flex items-center gap-2 rounded border border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              <input
+                type="checkbox"
+                checked={devBypassScroll}
+                onChange={(e) => setDevBypassScroll(e.target.checked)}
+              />
+              [DEV] Bypass Scroll Gate
+            </label>
           )}
 
           {/* Checkbox */}
           <label
             className={`flex items-start gap-3 ${
-              !hasScrolledToBottom ? "opacity-50 pointer-events-none" : ""
+              !scrollGatePassed ? "opacity-50 pointer-events-none" : ""
             }`}
           >
             <input
               type="checkbox"
               checked={isChecked}
               onChange={(e) => setIsChecked(e.target.checked)}
-              disabled={!hasScrolledToBottom}
+              disabled={!scrollGatePassed}
               className="mt-1 h-4 w-4 rounded border-gray-300"
             />
             <span className="text-sm">
@@ -365,15 +482,38 @@ export default function WaiverPage() {
             </p>
           )}
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
           <Button
             onClick={handleAccept}
             disabled={!canSubmit}
             className="w-full"
             size="lg"
           >
-            {isSubmitting ? "Processing…" : "I Agree — Continue"}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Processing…
+              </span>
+            ) : (
+              "I Agree — Continue"
+            )}
           </Button>
         </CardContent>
       </Card>
