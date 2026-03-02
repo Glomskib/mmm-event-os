@@ -19,7 +19,9 @@ export default function WaiverPage() {
 
   const eventId = searchParams.get("event_id") ?? "";
   const distanceParam = searchParams.get("distance") ?? "";
-  const referralCode = searchParams.get("ref") ?? "";
+  const [referralCode, setReferralCode] = useState(
+    searchParams.get("ref") ?? ""
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -51,6 +53,17 @@ export default function WaiverPage() {
         // Not logged in or profile fetch failed — fields stay empty
       });
   }, []);
+
+  // Cookie fallback for referral code
+  useEffect(() => {
+    if (referralCode) return;
+    const match = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("ref_code="));
+    if (match) {
+      setReferralCode(match.split("=")[1]);
+    }
+  }, [referralCode]);
 
   useEffect(() => {
     if (!eventId) {

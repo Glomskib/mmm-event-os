@@ -47,6 +47,13 @@ export function UserMenu({
           <p className="text-muted-foreground">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
+        <Link href="/profile">
+          <DropdownMenuItem>Profile</DropdownMenuItem>
+        </Link>
+        <Link href="/checkin">
+          <DropdownMenuItem>Check In</DropdownMenuItem>
+        </Link>
+        <DropdownMenuSeparator />
         <Link href="/admin">
           <DropdownMenuItem>Admin</DropdownMenuItem>
         </Link>

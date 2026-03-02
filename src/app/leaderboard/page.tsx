@@ -1,22 +1,100 @@
 import { Hero } from "@/components/layout/hero";
-import { Trophy } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentOrg } from "@/lib/org";
+import { LeaderboardTable } from "./leaderboard-table";
+import { UserRankCard } from "./user-rank-card";
 
-export const metadata = { title: "Leaderboard | MMM Event OS" };
+export const metadata = { title: "Referral Leaderboard | MMM Event OS" };
 
-export default function LeaderboardPage() {
+export default async function LeaderboardPage() {
+  const supabase = await createClient();
+  const org = await getCurrentOrg();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Fetch top 25 from leaderboard view
+  const { data: topEntries } = await supabase
+    .from("referral_leaderboard_v")
+    .select("*")
+    .eq("org_id", org?.id ?? "")
+    .order("rank", { ascending: true })
+    .limit(25);
+
+  // Fetch logged-in user's referral code + stats
+  let userCode: string | null = null;
+  let userRank: number | null = null;
+  let userCount = 0;
+  let unlockedTiers: string[] = [];
+
+  if (user) {
+    const { data: codeRow } = await supabase
+      .from("referral_codes")
+      .select("code")
+      .eq("user_id", user.id)
+      .eq("org_id", org?.id ?? "")
+      .single();
+
+    userCode = codeRow?.code ?? null;
+
+    // Check if user is in the leaderboard
+    const { data: userEntry } = await supabase
+      .from("referral_leaderboard_v")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("org_id", org?.id ?? "")
+      .single();
+
+    if (userEntry) {
+      userRank = userEntry.rank ?? null;
+      userCount = userEntry.referral_count ?? 0;
+    }
+
+    // Fetch user's unlocked rewards
+    const { data: rewards } = await supabase
+      .from("referral_rewards")
+      .select("tier")
+      .eq("user_id", user.id);
+
+    unlockedTiers = (rewards ?? []).map((r) => r.tier);
+  }
+
   return (
     <>
       <Hero
-        title="Leaderboard"
-        subtitle="See who's putting in the most miles this month."
+        title="Referral Leaderboard"
+        subtitle="Share your link, earn rewards, climb the ranks."
       />
 
-      <section className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:px-8">
-        <Trophy className="mx-auto h-16 w-16 text-muted-foreground/30" />
-        <h2 className="mt-6 text-xl font-semibold">Coming Soon</h2>
-        <p className="mt-2 text-muted-foreground">
-          The leaderboard will rank members by check-ins, miles ridden, and events attended.
-        </p>
+      <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-5">
+          {/* Leaderboard table — wider column */}
+          <div className="lg:col-span-3">
+            <LeaderboardTable
+              entries={topEntries ?? []}
+              currentUserId={user?.id ?? null}
+            />
+          </div>
+
+          {/* User's card — narrower column */}
+          <div className="lg:col-span-2">
+            {userCode ? (
+              <UserRankCard
+                data={{
+                  code: userCode,
+                  referralCount: userCount,
+                  rank: userRank,
+                  unlockedTiers,
+                }}
+              />
+            ) : (
+              <div className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                <p>Sign in to get your referral link and track your progress.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </section>
     </>
   );

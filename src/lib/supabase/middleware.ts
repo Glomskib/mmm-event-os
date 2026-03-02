@@ -38,5 +38,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Capture referral code from ?ref= into a cookie (7-day expiry)
+  const refCode = request.nextUrl.searchParams.get("ref");
+  if (refCode) {
+    supabaseResponse.cookies.set("ref_code", refCode, {
+      httpOnly: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+  }
+
   return supabaseResponse;
 }

@@ -11,6 +11,7 @@ alter table registrations
   add column if not exists waiver_snapshot_text text;
 
 -- Enforce that active registrations have participant + emergency info filled
+-- NOT VALID: skip checking existing rows (pre-waiver registrations have NULLs)
 alter table registrations
   add constraint registrations_participant_required
   check (
@@ -21,7 +22,16 @@ alter table registrations
       and emergency_contact_name is not null
       and emergency_contact_phone is not null
     )
-  );
+  ) not valid;
+
+-- Enforce waiver for paid/free registrations (from 00005 split)
+-- NOT VALID: existing paid rows have waiver_accepted=false from before waiver flow
+alter table registrations
+  add constraint waiver_required_paid
+  check (
+    status not in ('paid', 'free')
+    or waiver_accepted = true
+  ) not valid;
 
 -- Private storage bucket for signed waiver PDFs
 insert into storage.buckets (id, name, public)

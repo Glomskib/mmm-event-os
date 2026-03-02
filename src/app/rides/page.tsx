@@ -1,5 +1,6 @@
 import { Hero } from "@/components/layout/hero";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Card,
   CardContent,
@@ -8,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bike, Clock, MapPin } from "lucide-react";
+import { Bike, Clock, MapPin, Users } from "lucide-react";
 
 export const metadata = { title: "Rides | MMM Event OS" };
 
@@ -35,6 +36,41 @@ export default async function RidesPage() {
     .eq("cancelled", false)
     .order("date", { ascending: true })
     .limit(10);
+
+  // Fetch approved checkin counts and photos per upcoming ride occurrence
+  const admin = createAdminClient();
+  const occIds = (occurrences ?? []).map((o) => o.id);
+
+  const { data: approvedCheckins } = occIds.length > 0
+    ? await admin
+        .from("checkins")
+        .select("id, ride_occurrence_id, photo_path")
+        .in("ride_occurrence_id", occIds)
+        .eq("approved", true)
+    : { data: [] };
+
+  // Build maps: occurrence_id -> count, occurrence_id -> photo URLs (up to 4)
+  const riderCounts = new Map<string, number>();
+  const ridePhotoPaths = new Map<string, string[]>();
+
+  for (const c of approvedCheckins ?? []) {
+    if (!c.ride_occurrence_id) continue;
+    riderCounts.set(c.ride_occurrence_id, (riderCounts.get(c.ride_occurrence_id) ?? 0) + 1);
+    const photos = ridePhotoPaths.get(c.ride_occurrence_id) ?? [];
+    if (photos.length < 4 && c.photo_path) photos.push(c.photo_path);
+    ridePhotoPaths.set(c.ride_occurrence_id, photos);
+  }
+
+  // Generate signed URLs for photo thumbnails
+  const ridePhotoUrls = new Map<string, string[]>();
+  for (const [occId, paths] of ridePhotoPaths) {
+    const urls: string[] = [];
+    for (const p of paths) {
+      const { data } = await admin.storage.from("checkins").createSignedUrl(p, 3600);
+      if (data?.signedUrl) urls.push(data.signedUrl);
+    }
+    ridePhotoUrls.set(occId, urls);
+  }
 
   return (
     <>
@@ -98,9 +134,17 @@ export default async function RidesPage() {
                   <Bike className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">
-                    {occ.ride_series?.title ?? "Ride"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      {occ.ride_series?.title ?? "Ride"}
+                    </p>
+                    {(riderCounts.get(occ.id) ?? 0) > 0 && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Users className="h-3 w-3" />
+                        {riderCounts.get(occ.id)} {riderCounts.get(occ.id) === 1 ? "rider" : "riders"}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {new Date(occ.date + "T00:00:00").toLocaleDateString("en-US", {
                       weekday: "long",
@@ -110,6 +154,18 @@ export default async function RidesPage() {
                     {occ.note && ` — ${occ.note}`}
                   </p>
                 </div>
+                {(ridePhotoUrls.get(occ.id)?.length ?? 0) > 0 && (
+                  <div className="hidden sm:flex -space-x-2">
+                    {ridePhotoUrls.get(occ.id)!.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt="Ride photo"
+                        className="h-10 w-10 rounded-full border-2 border-background object-cover"
+                      />
+                    ))}
+                  </div>
+                )}
               </Card>
             ))}
           </div>

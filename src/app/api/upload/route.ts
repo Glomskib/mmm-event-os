@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { filename, contentType } = await request.json();
+  const { filename, contentType, rideOccurrenceId } = await request.json();
 
   if (!filename || !contentType) {
     return NextResponse.json(
@@ -21,8 +21,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Scope uploads to user's folder: {user_id}/{timestamp}-{filename}
-  const path = `${user.id}/${Date.now()}-${filename}`;
+  // If rideOccurrenceId provided, scope to ride folder; otherwise legacy user folder
+  const path = rideOccurrenceId
+    ? `${rideOccurrenceId}/${user.id}-${Date.now()}.jpg`
+    : `${user.id}/${Date.now()}-${filename}`;
 
   const { data, error } = await supabase.storage
     .from("checkins")

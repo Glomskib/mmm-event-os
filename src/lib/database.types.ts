@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       checkins: {
         Row: {
+          approved: boolean
           created_at: string
           event_id: string | null
           id: string
@@ -25,6 +26,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved?: boolean
           created_at?: string
           event_id?: string | null
           id?: string
@@ -34,6 +36,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved?: boolean
           created_at?: string
           event_id?: string | null
           id?: string
@@ -178,6 +181,89 @@ export type Database = {
           },
         ]
       }
+      raffle_entries: {
+        Row: {
+          checkin_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          org_id: string
+          source: Database["public"]["Enums"]["raffle_entry_source"]
+          source_id: string | null
+          tickets_count: number
+          user_id: string
+        }
+        Insert: {
+          checkin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          org_id: string
+          source: Database["public"]["Enums"]["raffle_entry_source"]
+          source_id?: string | null
+          tickets_count?: number
+          user_id: string
+        }
+        Update: {
+          checkin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          source?: Database["public"]["Enums"]["raffle_entry_source"]
+          source_id?: string | null
+          tickets_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_entries_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: true
+            referencedRelation: "checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_entries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_credits: {
         Row: {
           amount: number
@@ -226,6 +312,30 @@ export type Database = {
           },
         ]
       }
+      referral_rewards: {
+        Row: {
+          id: string
+          source_count: number
+          tier: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          source_count?: number
+          tier: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          source_count?: number
+          tier?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           amount: number
@@ -250,8 +360,8 @@ export type Database = {
           waiver_ip: string | null
           waiver_pdf_url: string | null
           waiver_snapshot_text: string | null
-          waiver_user_agent: string | null
           waiver_text_hash: string | null
+          waiver_user_agent: string | null
           waiver_version: string | null
         }
         Insert: {
@@ -277,8 +387,8 @@ export type Database = {
           waiver_ip?: string | null
           waiver_pdf_url?: string | null
           waiver_snapshot_text?: string | null
-          waiver_user_agent?: string | null
           waiver_text_hash?: string | null
+          waiver_user_agent?: string | null
           waiver_version?: string | null
         }
         Update: {
@@ -304,8 +414,8 @@ export type Database = {
           waiver_ip?: string | null
           waiver_pdf_url?: string | null
           waiver_snapshot_text?: string | null
-          waiver_user_agent?: string | null
           waiver_text_hash?: string | null
+          waiver_user_agent?: string | null
           waiver_version?: string | null
         }
         Relationships: [
@@ -416,14 +526,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      referral_leaderboard_v: {
+        Row: {
+          avatar_url: string | null
+          code: string | null
+          full_name: string | null
+          org_id: string | null
+          rank: number | null
+          referral_count: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: { Args: { p_name: string }; Returns: string }
+      get_my_org_id: { Args: never; Returns: string }
+      is_org_admin: { Args: { check_org_id: string }; Returns: boolean }
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
-      registration_status: "pending" | "paid" | "free" | "refunded" | "cancelled"
+      raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event"
+      registration_status:
+        | "pending"
+        | "paid"
+        | "refunded"
+        | "cancelled"
+        | "free"
       ride_difficulty: "easy" | "moderate" | "hard"
       user_role: "admin" | "member"
     }
@@ -554,7 +691,8 @@ export const Constants = {
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
-      registration_status: ["pending", "paid", "free", "refunded", "cancelled"],
+      raffle_entry_source: ["shop_ride", "referral", "bonus", "event"],
+      registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
       user_role: ["admin", "member"],
     },
@@ -568,5 +706,8 @@ export type Event = Tables<"events">;
 export type RideSeries = Tables<"ride_series">;
 export type RideOccurrence = Tables<"ride_occurrences">;
 export type Checkin = Tables<"checkins">;
+export type RaffleEntry = Tables<"raffle_entries">;
 export type Registration = Tables<"registrations">;
 export type ReferralCredit = Tables<"referral_credits">;
+export type ReferralCode = Tables<"referral_codes">;
+export type ReferralReward = Tables<"referral_rewards">;

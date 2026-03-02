@@ -7,6 +7,7 @@ import { UserMenu } from "./user-menu";
 const navLinks = [
   { href: "/events", label: "Events" },
   { href: "/rides", label: "Rides" },
+  { href: "/checkin", label: "Check In" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/wheels-and-reels", label: "Wheels & Reels" },
 ];
