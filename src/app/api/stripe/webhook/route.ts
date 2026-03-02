@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const meta = session.metadata || {};
 
-      // Upsert registration
+      // Upsert registration with waiver fields from metadata
       const { error: regError } = await supabase
         .from("registrations")
         .upsert(
@@ -56,6 +56,11 @@ export async function POST(request: Request) {
             status: "paid",
             referral_code: meta.referral_code || null,
             email: session.customer_email || null,
+            waiver_accepted: meta.waiver_accepted === "true",
+            waiver_accepted_at: meta.waiver_accepted_at || null,
+            waiver_ip: meta.waiver_ip || null,
+            waiver_user_agent: meta.waiver_user_agent || null,
+            waiver_version: meta.waiver_version || null,
           },
           { onConflict: "stripe_session_id" }
         );
@@ -68,8 +73,8 @@ export async function POST(request: Request) {
         );
       }
 
-      // If there's a referral code, create a referral credit (idempotent)
-      if (meta.referral_code) {
+      // Only create referral credit for paid registrations (amount > 0)
+      if (meta.referral_code && (session.amount_total || 0) > 0) {
         const { data: reg } = await supabase
           .from("registrations")
           .select("id")
@@ -89,7 +94,7 @@ export async function POST(request: Request) {
               org_id: meta.org_id,
               registration_id: reg.id,
               referral_code: meta.referral_code,
-              amount: 500, // $5.00 referral credit — adjust as needed
+              amount: 500, // $5.00 referral credit
             });
           }
         }

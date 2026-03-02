@@ -16,12 +16,13 @@ export const metadata = { title: "Registration Confirmed | MMM Event OS" };
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; free?: string }>;
 }) {
-  const { session_id } = await searchParams;
+  const { session_id, free } = await searchParams;
+  const isFree = free === "true";
 
   let session = null;
-  if (session_id) {
+  if (session_id && !isFree) {
     try {
       session = await stripe.checkout.sessions.retrieve(session_id);
     } catch {
@@ -41,9 +42,11 @@ export default async function SuccessPage({
             <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-600" />
             <CardTitle className="text-2xl">Registration Confirmed</CardTitle>
             <CardDescription>
-              {session
-                ? `Thank you for registering! Your payment of $${((session.amount_total || 0) / 100).toFixed(2)} has been received.`
-                : "Your registration has been confirmed."}
+              {isFree
+                ? "You're registered! No payment required for this distance."
+                : session
+                  ? `Thank you for registering! Your payment of $${((session.amount_total || 0) / 100).toFixed(2)} has been received.`
+                  : "Your registration has been confirmed."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -69,6 +72,23 @@ export default async function SuccessPage({
                     <span className="font-medium">{meta.referral_code}</span>
                   </div>
                 )}
+                {meta.waiver_accepted_at && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Waiver signed</span>
+                    <span className="font-mono text-xs">
+                      {new Date(meta.waiver_accepted_at).toLocaleString()} from {meta.waiver_ip}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isFree && !meta && (
+              <div className="rounded-lg border p-4 text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="font-medium">Free registration</span>
+                </div>
               </div>
             )}
 

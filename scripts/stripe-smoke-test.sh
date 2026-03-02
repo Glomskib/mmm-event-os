@@ -94,7 +94,7 @@ fire_webhook() {
     -d "$payload"
 }
 
-# Build a checkout.session.completed event payload
+# Build a checkout.session.completed event payload (with waiver metadata)
 build_checkout_event() {
   local evt_id="$1"      # Stripe event ID
   local session_id="$2"  # Checkout session ID
@@ -124,7 +124,12 @@ build_checkout_event() {
         "event_id": "${event_id}",
         "distance": "${distance}",
         "referral_code": "${referral_code}",
-        "user_id": ""
+        "user_id": "",
+        "waiver_accepted": "true",
+        "waiver_accepted_at": "2026-03-01T12:00:00.000Z",
+        "waiver_ip": "127.0.0.1",
+        "waiver_user_agent": "smoke-test/1.0",
+        "waiver_version": "v1"
       }
     }
   }
@@ -220,87 +225,107 @@ CS_E="cs_smoke_e_${RUN_TAG}"
 PI_E="pi_smoke_e_${RUN_TAG}"
 CS_F="cs_smoke_f_${RUN_TAG}"
 PI_F="pi_smoke_f_${RUN_TAG}"
+CS_FREE="cs_smoke_free_${RUN_TAG}"
+PI_FREE="pi_smoke_free_${RUN_TAG}"
+CS_FREEREF="cs_smoke_freeref_${RUN_TAG}"
+PI_FREEREF="pi_smoke_freeref_${RUN_TAG}"
 
 # ============================================================
-# Test A: HHH 30 miles — paid
+# Test A: HHH 30 miles — paid, $48.99
 # ============================================================
-printf "\n${BOLD}[A] HHH 30 miles — checkout.session.completed${NC}\n"
+printf "\n${BOLD}[A] HHH 30 miles — checkout.session.completed (\$48.99)${NC}\n"
 PAYLOAD_A=$(build_checkout_event "evt_smoke_a_${RUN_TAG}" "$CS_A" "$PI_A" \
-  "$MMM_ORG_ID" "$HHH_EVENT_ID" "30 miles" 5000 "" "runner30@test.com")
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "30 miles" 4899 "" "runner30@test.com")
 
 STATUS_A=$(fire_webhook "$PAYLOAD_A")
 if [ "$STATUS_A" = "200" ]; then
   # Verify registration in DB
   sleep 0.5
-  REG_A=$(sb_query "registrations" "select=id,status,distance,amount&stripe_session_id=eq.${CS_A}" | jq '.[0]')
+  REG_A=$(sb_query "registrations" "select=id,status,distance,amount,waiver_accepted,waiver_ip,waiver_version&stripe_session_id=eq.${CS_A}" | jq '.[0]')
   REG_A_STATUS=$(echo "$REG_A" | jq -r '.status // empty')
   REG_A_DIST=$(echo "$REG_A" | jq -r '.distance // empty')
   REG_A_AMT=$(echo "$REG_A" | jq -r '.amount // 0')
+  REG_A_WAIVER=$(echo "$REG_A" | jq -r '.waiver_accepted // false')
+  REG_A_WIP=$(echo "$REG_A" | jq -r '.waiver_ip // empty')
+  REG_A_WVER=$(echo "$REG_A" | jq -r '.waiver_version // empty')
 
-  if [ "$REG_A_STATUS" = "paid" ] && [ "$REG_A_DIST" = "30 miles" ] && [ "$REG_A_AMT" = "5000" ]; then
-    pass "A: HHH 30mi registration created (paid, \$50)"
-  else
-    fail "A: HHH 30mi" "status=${REG_A_STATUS}, dist=${REG_A_DIST}, amt=${REG_A_AMT}"
+  A_OK=true
+  if [ "$REG_A_STATUS" != "paid" ] || [ "$REG_A_DIST" != "30 miles" ] || [ "$REG_A_AMT" != "4899" ]; then
+    fail "A: HHH 30mi registration" "status=${REG_A_STATUS}, dist=${REG_A_DIST}, amt=${REG_A_AMT}"
+    A_OK=false
+  fi
+  if [ "$REG_A_WAIVER" != "true" ] || [ "$REG_A_WIP" != "127.0.0.1" ] || [ "$REG_A_WVER" != "v1" ]; then
+    fail "A: HHH 30mi waiver fields" "waiver=${REG_A_WAIVER}, ip=${REG_A_WIP}, ver=${REG_A_WVER}"
+    A_OK=false
+  fi
+  if [ "$A_OK" = "true" ]; then
+    pass "A: HHH 30mi registration created (paid, \$48.99, waiver OK)"
   fi
 else
   fail "A: HHH 30mi" "webhook returned HTTP ${STATUS_A}"
 fi
 
 # ============================================================
-# Test B: HHH 62 miles — paid
+# Test B: HHH 62 miles — paid, $64.99
 # ============================================================
-printf "\n${BOLD}[B] HHH 62 miles — checkout.session.completed${NC}\n"
+printf "\n${BOLD}[B] HHH 62 miles — checkout.session.completed (\$64.99)${NC}\n"
 PAYLOAD_B=$(build_checkout_event "evt_smoke_b_${RUN_TAG}" "$CS_B" "$PI_B" \
-  "$MMM_ORG_ID" "$HHH_EVENT_ID" "62 miles" 5000 "" "runner62@test.com")
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "62 miles" 6499 "" "runner62@test.com")
 
 STATUS_B=$(fire_webhook "$PAYLOAD_B")
 if [ "$STATUS_B" = "200" ]; then
   sleep 0.5
-  REG_B_STATUS=$(sb_query "registrations" "select=status&stripe_session_id=eq.${CS_B}" | jq -r '.[0].status // empty')
-  if [ "$REG_B_STATUS" = "paid" ]; then
-    pass "B: HHH 62mi registration created (paid)"
+  REG_B=$(sb_query "registrations" "select=status,amount&stripe_session_id=eq.${CS_B}" | jq '.[0]')
+  REG_B_STATUS=$(echo "$REG_B" | jq -r '.status // empty')
+  REG_B_AMT=$(echo "$REG_B" | jq -r '.amount // 0')
+  if [ "$REG_B_STATUS" = "paid" ] && [ "$REG_B_AMT" = "6499" ]; then
+    pass "B: HHH 62mi registration created (paid, \$64.99)"
   else
-    fail "B: HHH 62mi" "status=${REG_B_STATUS}"
+    fail "B: HHH 62mi" "status=${REG_B_STATUS}, amt=${REG_B_AMT}"
   fi
 else
   fail "B: HHH 62mi" "webhook returned HTTP ${STATUS_B}"
 fi
 
 # ============================================================
-# Test C: HHH 100 miles — paid
+# Test C: HHH 100 miles — paid, $74.99
 # ============================================================
-printf "\n${BOLD}[C] HHH 100 miles — checkout.session.completed${NC}\n"
+printf "\n${BOLD}[C] HHH 100 miles — checkout.session.completed (\$74.99)${NC}\n"
 PAYLOAD_C=$(build_checkout_event "evt_smoke_c_${RUN_TAG}" "$CS_C" "$PI_C" \
-  "$MMM_ORG_ID" "$HHH_EVENT_ID" "100 miles" 5000 "" "runner100@test.com")
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "100 miles" 7499 "" "runner100@test.com")
 
 STATUS_C=$(fire_webhook "$PAYLOAD_C")
 if [ "$STATUS_C" = "200" ]; then
   sleep 0.5
-  REG_C_STATUS=$(sb_query "registrations" "select=status&stripe_session_id=eq.${CS_C}" | jq -r '.[0].status // empty')
-  if [ "$REG_C_STATUS" = "paid" ]; then
-    pass "C: HHH 100mi registration created (paid)"
+  REG_C=$(sb_query "registrations" "select=status,amount&stripe_session_id=eq.${CS_C}" | jq '.[0]')
+  REG_C_STATUS=$(echo "$REG_C" | jq -r '.status // empty')
+  REG_C_AMT=$(echo "$REG_C" | jq -r '.amount // 0')
+  if [ "$REG_C_STATUS" = "paid" ] && [ "$REG_C_AMT" = "7499" ]; then
+    pass "C: HHH 100mi registration created (paid, \$74.99)"
   else
-    fail "C: HHH 100mi" "status=${REG_C_STATUS}"
+    fail "C: HHH 100mi" "status=${REG_C_STATUS}, amt=${REG_C_AMT}"
   fi
 else
   fail "C: HHH 100mi" "webhook returned HTTP ${STATUS_C}"
 fi
 
 # ============================================================
-# Test D: FFF event — paid
+# Test D: FFF event — paid, $35.00
 # ============================================================
-printf "\n${BOLD}[D] Fun Friday Fifty — checkout.session.completed${NC}\n"
+printf "\n${BOLD}[D] Fun Friday Fifty — checkout.session.completed (\$35.00)${NC}\n"
 PAYLOAD_D=$(build_checkout_event "evt_smoke_d_${RUN_TAG}" "$CS_D" "$PI_D" \
-  "$MMM_ORG_ID" "$FFF_EVENT" "50 miles" 5000 "" "fff-rider@test.com")
+  "$MMM_ORG_ID" "$FFF_EVENT" "50 miles" 3500 "" "fff-rider@test.com")
 
 STATUS_D=$(fire_webhook "$PAYLOAD_D")
 if [ "$STATUS_D" = "200" ]; then
   sleep 0.5
-  REG_D_STATUS=$(sb_query "registrations" "select=status&stripe_session_id=eq.${CS_D}" | jq -r '.[0].status // empty')
-  if [ "$REG_D_STATUS" = "paid" ]; then
-    pass "D: FFF registration created (paid)"
+  REG_D=$(sb_query "registrations" "select=status,amount&stripe_session_id=eq.${CS_D}" | jq '.[0]')
+  REG_D_STATUS=$(echo "$REG_D" | jq -r '.status // empty')
+  REG_D_AMT=$(echo "$REG_D" | jq -r '.amount // 0')
+  if [ "$REG_D_STATUS" = "paid" ] && [ "$REG_D_AMT" = "3500" ]; then
+    pass "D: FFF registration created (paid, \$35.00)"
   else
-    fail "D: FFF" "status=${REG_D_STATUS}"
+    fail "D: FFF" "status=${REG_D_STATUS}, amt=${REG_D_AMT}"
   fi
 else
   fail "D: FFF" "webhook returned HTTP ${STATUS_D}"
@@ -309,9 +334,9 @@ fi
 # ============================================================
 # Test E: Paid with referral code — verify referral credit
 # ============================================================
-printf "\n${BOLD}[E] HHH + referral code FRIEND2026${NC}\n"
+printf "\n${BOLD}[E] HHH 62mi + referral code FRIEND2026${NC}\n"
 PAYLOAD_E=$(build_checkout_event "evt_smoke_e_${RUN_TAG}" "$CS_E" "$PI_E" \
-  "$MMM_ORG_ID" "$HHH_EVENT_ID" "62 miles" 5000 "FRIEND2026" "referral@test.com")
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "62 miles" 6499 "FRIEND2026" "referral@test.com")
 
 STATUS_E=$(fire_webhook "$PAYLOAD_E")
 if [ "$STATUS_E" = "200" ]; then
@@ -344,7 +369,7 @@ fi
 # ============================================================
 printf "\n${BOLD}[F] Idempotency — replay checkout webhook${NC}\n"
 PAYLOAD_F=$(build_checkout_event "evt_smoke_f_${RUN_TAG}" "$CS_F" "$PI_F" \
-  "$MMM_ORG_ID" "$HHH_EVENT_ID" "30 miles" 5000 "IDEM_CODE" "idem@test.com")
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "30 miles" 4899 "IDEM_CODE" "idem@test.com")
 
 STATUS_F1=$(fire_webhook "$PAYLOAD_F")
 sleep 0.5
@@ -369,10 +394,60 @@ else
 fi
 
 # ============================================================
+# Test FREE: HHH 15mi — free tier (amount=0, status=free)
+# ============================================================
+printf "\n${BOLD}[FREE] HHH 15 miles — free tier via webhook (amount=0)${NC}\n"
+PAYLOAD_FREE=$(build_checkout_event "evt_smoke_free_${RUN_TAG}" "$CS_FREE" "$PI_FREE" \
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "15 miles" 0 "" "free15@test.com")
+
+STATUS_FREE=$(fire_webhook "$PAYLOAD_FREE")
+if [ "$STATUS_FREE" = "200" ]; then
+  sleep 0.5
+  REG_FREE=$(sb_query "registrations" "select=id,status,amount,waiver_accepted,waiver_ip&stripe_session_id=eq.${CS_FREE}" | jq '.[0]')
+  REG_FREE_STATUS=$(echo "$REG_FREE" | jq -r '.status // empty')
+  REG_FREE_AMT=$(echo "$REG_FREE" | jq -r '.amount // 0')
+  REG_FREE_WAIVER=$(echo "$REG_FREE" | jq -r '.waiver_accepted // false')
+
+  if [ "$REG_FREE_STATUS" = "paid" ] && [ "$REG_FREE_AMT" = "0" ] && [ "$REG_FREE_WAIVER" = "true" ]; then
+    pass "FREE: HHH 15mi free-tier registration (amount=0, waiver OK)"
+  else
+    fail "FREE: HHH 15mi" "status=${REG_FREE_STATUS}, amt=${REG_FREE_AMT}, waiver=${REG_FREE_WAIVER}"
+  fi
+else
+  fail "FREE: HHH 15mi" "webhook returned HTTP ${STATUS_FREE}"
+fi
+
+# ============================================================
+# Test FREEREF: Free tier + referral code — NO credit should be created
+# ============================================================
+printf "\n${BOLD}[FREEREF] HHH 15mi + referral code — no credit for free tier${NC}\n"
+PAYLOAD_FREEREF=$(build_checkout_event "evt_smoke_freeref_${RUN_TAG}" "$CS_FREEREF" "$PI_FREEREF" \
+  "$MMM_ORG_ID" "$HHH_EVENT_ID" "15 miles" 0 "FREE_REF_CODE" "freeref@test.com")
+
+STATUS_FREEREF=$(fire_webhook "$PAYLOAD_FREEREF")
+if [ "$STATUS_FREEREF" = "200" ]; then
+  sleep 0.5
+  REG_FREEREF_ID=$(sb_query "registrations" "select=id&stripe_session_id=eq.${CS_FREEREF}" | jq -r '.[0].id // empty')
+
+  if [ -n "$REG_FREEREF_ID" ]; then
+    CREDIT_FREEREF_COUNT=$(sb_query "referral_credits" "select=id&registration_id=eq.${REG_FREEREF_ID}" | jq 'length')
+    if [ "$CREDIT_FREEREF_COUNT" = "0" ]; then
+      pass "FREEREF: No referral credit created for free-tier registration"
+    else
+      fail "FREEREF: Referral credit guard" "expected 0 credits, got ${CREDIT_FREEREF_COUNT}"
+    fi
+  else
+    fail "FREEREF: Registration" "registration not found"
+  fi
+else
+  fail "FREEREF: Free+referral" "webhook returned HTTP ${STATUS_FREEREF}"
+fi
+
+# ============================================================
 # Test G: charge.refunded — status + credit voided
 # ============================================================
 printf "\n${BOLD}[G] Refund — charge.refunded for test E's payment${NC}\n"
-REFUND_PAYLOAD=$(build_refund_event "evt_smoke_refund_${RUN_TAG}" "ch_smoke_${RUN_TAG}" "$PI_E" 5000)
+REFUND_PAYLOAD=$(build_refund_event "evt_smoke_refund_${RUN_TAG}" "ch_smoke_${RUN_TAG}" "$PI_E" 6499)
 
 STATUS_G=$(fire_webhook "$REFUND_PAYLOAD")
 if [ "$STATUS_G" = "200" ]; then
@@ -426,7 +501,7 @@ fi
 # Cleanup: remove smoke-test registrations and credits
 # ============================================================
 printf "\n${BOLD}Cleaning up smoke-test data…${NC}\n"
-for CS in "$CS_A" "$CS_B" "$CS_C" "$CS_D" "$CS_E" "$CS_F"; do
+for CS in "$CS_A" "$CS_B" "$CS_C" "$CS_D" "$CS_E" "$CS_F" "$CS_FREE" "$CS_FREEREF"; do
   REG_ID=$(sb_query "registrations" "select=id&stripe_session_id=eq.${CS}" | jq -r '.[0].id // empty')
   if [ -n "$REG_ID" ]; then
     sb_delete "referral_credits" "registration_id=eq.${REG_ID}" > /dev/null 2>&1 || true

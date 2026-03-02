@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getPrice } from "@/lib/pricing";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -46,8 +48,49 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Capture waiver metadata from request headers
+  const waiverIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+  const waiverUserAgent = request.headers.get("user-agent") || "unknown";
+  const waiverVersion = "v1";
+  const waiverAcceptedAt = new Date().toISOString();
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const price = getPrice(event.title, distance);
+
+  // ── Free tier: skip Stripe, insert registration directly ──
+  if (price === 0) {
+    const admin = createAdminClient();
+    const { error: regError } = await admin.from("registrations").insert({
+      org_id: event.org_id,
+      event_id: event.id,
+      user_id: user?.id || null,
+      distance,
+      amount: 0,
+      status: "free",
+      referral_code: referralCode || null,
+      email: user?.email || null,
+      waiver_accepted: true,
+      waiver_accepted_at: waiverAcceptedAt,
+      waiver_ip: waiverIp,
+      waiver_user_agent: waiverUserAgent,
+      waiver_version: waiverVersion,
+    });
+
+    if (regError) {
+      console.error("Failed to insert free registration:", regError);
+      return NextResponse.json(
+        { error: "Failed to create registration." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ url: `${appUrl}/success?free=true` });
+  }
+
+  // ── Paid tier: create Stripe checkout session ──
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: [
@@ -58,7 +101,7 @@ export async function POST(request: Request) {
             name: `${event.title} — ${distance}`,
             description: `Registration for ${event.title}`,
           },
-          unit_amount: 5000, // $50.00 default — replace with event pricing logic
+          unit_amount: price,
         },
         quantity: 1,
       },
@@ -69,6 +112,11 @@ export async function POST(request: Request) {
       distance,
       referral_code: referralCode || "",
       user_id: user?.id || "",
+      waiver_accepted: "true",
+      waiver_accepted_at: waiverAcceptedAt,
+      waiver_ip: waiverIp,
+      waiver_user_agent: waiverUserAgent,
+      waiver_version: waiverVersion,
     },
     customer_email: user?.email || undefined,
     success_url: `${appUrl}/success?session_id={CHECKOUT_SESSION_ID}`,

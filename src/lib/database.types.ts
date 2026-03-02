@@ -241,6 +241,11 @@ export type Database = {
           stripe_session_id: string | null
           updated_at: string
           user_id: string | null
+          waiver_accepted: boolean
+          waiver_accepted_at: string | null
+          waiver_ip: string | null
+          waiver_user_agent: string | null
+          waiver_version: string | null
         }
         Insert: {
           amount?: number
@@ -256,6 +261,11 @@ export type Database = {
           stripe_session_id?: string | null
           updated_at?: string
           user_id?: string | null
+          waiver_accepted?: boolean
+          waiver_accepted_at?: string | null
+          waiver_ip?: string | null
+          waiver_user_agent?: string | null
+          waiver_version?: string | null
         }
         Update: {
           amount?: number
@@ -271,6 +281,11 @@ export type Database = {
           stripe_session_id?: string | null
           updated_at?: string
           user_id?: string | null
+          waiver_accepted?: boolean
+          waiver_accepted_at?: string | null
+          waiver_ip?: string | null
+          waiver_user_agent?: string | null
+          waiver_version?: string | null
         }
         Relationships: [
           {
@@ -387,7 +402,7 @@ export type Database = {
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
-      registration_status: "pending" | "paid" | "refunded" | "cancelled"
+      registration_status: "pending" | "paid" | "free" | "refunded" | "cancelled"
       ride_difficulty: "easy" | "moderate" | "hard"
       user_role: "admin" | "member"
     }
@@ -518,7 +533,7 @@ export const Constants = {
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
-      registration_status: ["pending", "paid", "refunded", "cancelled"],
+      registration_status: ["pending", "paid", "free", "refunded", "cancelled"],
       ride_difficulty: ["easy", "moderate", "hard"],
       user_role: ["admin", "member"],
     },
