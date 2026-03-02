@@ -6,6 +6,8 @@ import { UserRankCard } from "./user-rank-card";
 
 export const metadata = { title: "Referral Leaderboard | MMM Event OS" };
 
+export const revalidate = 60;
+
 export default async function LeaderboardPage() {
   const supabase = await createClient();
   const org = await getCurrentOrg();
@@ -29,33 +31,33 @@ export default async function LeaderboardPage() {
   let unlockedTiers: string[] = [];
 
   if (user) {
-    const { data: codeRow } = await supabase
-      .from("referral_codes")
-      .select("code")
-      .eq("user_id", user.id)
-      .eq("org_id", org?.id ?? "")
-      .single();
+    // Parallel fetch: user's code, leaderboard entry, and rewards
+    const [{ data: codeRow }, { data: userEntry }, { data: rewards }] =
+      await Promise.all([
+        supabase
+          .from("referral_codes")
+          .select("code")
+          .eq("user_id", user.id)
+          .eq("org_id", org?.id ?? "")
+          .single(),
+        supabase
+          .from("referral_leaderboard_v")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("org_id", org?.id ?? "")
+          .single(),
+        supabase
+          .from("referral_rewards")
+          .select("tier")
+          .eq("user_id", user.id),
+      ]);
 
     userCode = codeRow?.code ?? null;
-
-    // Check if user is in the leaderboard
-    const { data: userEntry } = await supabase
-      .from("referral_leaderboard_v")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("org_id", org?.id ?? "")
-      .single();
 
     if (userEntry) {
       userRank = userEntry.rank ?? null;
       userCount = userEntry.referral_count ?? 0;
     }
-
-    // Fetch user's unlocked rewards
-    const { data: rewards } = await supabase
-      .from("referral_rewards")
-      .select("tier")
-      .eq("user_id", user.id);
 
     unlockedTiers = (rewards ?? []).map((r) => r.tier);
   }

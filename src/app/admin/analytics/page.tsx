@@ -13,34 +13,31 @@ import { RevenueBreakdownCard } from "./analytics-tables-client";
 
 export const metadata = { title: "Analytics | Admin | MMM Event OS" };
 
+export const revalidate = 60;
+
 export default async function AnalyticsPage() {
   const org = await getCurrentOrg();
   if (!org) return <p>Org not found</p>;
 
   const admin = createAdminClient();
 
-  // Fetch all registrations for this org
-  const { data: registrations } = await admin
-    .from("registrations")
-    .select("id, status, amount, distance, event_id, referral_code, created_at")
-    .eq("org_id", org.id);
+  // Parallel fetch: registrations, events, and referral credits
+  const [{ data: registrations }, { data: allEvents }, { data: referralCredits }] =
+    await Promise.all([
+      admin
+        .from("registrations")
+        .select("id, status, amount, distance, event_id, referral_code, created_at")
+        .eq("org_id", org.id),
+      admin.from("events").select("id, title").eq("org_id", org.id),
+      admin
+        .from("referral_credits")
+        .select("registration_id")
+        .eq("org_id", org.id)
+        .eq("voided", false),
+    ]);
 
   const regs = registrations ?? [];
-
-  // Fetch events for name mapping
-  const eventIds = [...new Set(regs.map((r) => r.event_id))];
-  const { data: events } = eventIds.length > 0
-    ? await admin.from("events").select("id, title").in("id", eventIds)
-    : { data: [] };
-  const eventMap = new Map((events ?? []).map((e) => [e.id, e.title]));
-
-  // Fetch referral credits to calculate referral-generated revenue
-  const { data: referralCredits } = await admin
-    .from("referral_credits")
-    .select("registration_id")
-    .eq("org_id", org.id)
-    .eq("voided", false);
-
+  const eventMap = new Map((allEvents ?? []).map((e) => [e.id, e.title]));
   const referralRegIds = new Set(
     (referralCredits ?? []).map((rc) => rc.registration_id)
   );

@@ -11,27 +11,23 @@ export default async function EventDayPage() {
 
   const admin = createAdminClient();
 
-  // Fetch active registrations with participant details
-  const { data: registrations } = await admin
-    .from("registrations")
-    .select(
-      "id, participant_name, participant_email, distance, status, waiver_accepted, waiver_accepted_at, emergency_contact_name, emergency_contact_phone, referral_code, bib_issued, emergency_flag, user_id, event_id"
-    )
-    .eq("org_id", org.id)
-    .in("status", ["paid", "free"])
-    .order("participant_name", { ascending: true });
+  // Parallel fetch: registrations and all raffle entries for the org
+  const [{ data: registrations }, { data: raffleEntries }] = await Promise.all([
+    admin
+      .from("registrations")
+      .select(
+        "id, participant_name, participant_email, distance, status, waiver_accepted, waiver_accepted_at, emergency_contact_name, emergency_contact_phone, referral_code, bib_issued, emergency_flag, user_id, event_id"
+      )
+      .eq("org_id", org.id)
+      .in("status", ["paid", "free"])
+      .order("participant_name", { ascending: true }),
+    admin
+      .from("raffle_entries")
+      .select("user_id, tickets_count, source")
+      .eq("org_id", org.id),
+  ]);
 
   const regs = registrations ?? [];
-
-  // Fetch raffle ticket totals per user
-  const userIds = [...new Set(regs.map((r) => r.user_id).filter(Boolean))] as string[];
-  const { data: raffleEntries } = userIds.length > 0
-    ? await admin
-        .from("raffle_entries")
-        .select("user_id, tickets_count, source")
-        .eq("org_id", org.id)
-        .in("user_id", userIds)
-    : { data: [] };
 
   // Aggregate tickets by user: referral vs main
   const ticketMap = new Map<

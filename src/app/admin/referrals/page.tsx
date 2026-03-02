@@ -64,18 +64,15 @@ export default async function AdminReferralsPage() {
   const org = await getCurrentOrg();
   const admin = createAdminClient();
 
-  const { data: entries } = await admin
-    .from("referral_leaderboard_v")
-    .select("*")
-    .eq("org_id", org?.id ?? "")
-    .order("rank", { ascending: true });
-
-  // Fetch rewards for all users
-  const userIds = (entries ?? []).map((e) => e.user_id).filter((id): id is string => id !== null);
-  const { data: rewards } = await admin
-    .from("referral_rewards")
-    .select("user_id, tier")
-    .in("user_id", userIds.length > 0 ? userIds : ["__none__"]);
+  // Parallel fetch: leaderboard entries and all rewards
+  const [{ data: entries }, { data: rewards }] = await Promise.all([
+    admin
+      .from("referral_leaderboard_v")
+      .select("*")
+      .eq("org_id", org?.id ?? "")
+      .order("rank", { ascending: true }),
+    admin.from("referral_rewards").select("user_id, tier"),
+  ]);
 
   const rewardsByUser = new Map<string, string[]>();
   for (const r of rewards ?? []) {
