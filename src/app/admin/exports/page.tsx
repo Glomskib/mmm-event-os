@@ -92,6 +92,19 @@ export default async function ExportsPage() {
               <ExportButton exportFn={exportEmergencyContactsCsv} />
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Event Bundle (ZIP)</CardTitle>
+              <CardDescription>
+                Download a ZIP containing registrations, emergency contacts, and
+                raffle entries as separate CSV files.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BundleExportClient />
+            </CardContent>
+          </Card>
         </div>
       </section>
     </>
@@ -112,5 +125,6 @@ function ExportButton({
   return <ExportButtonClient action={handleExport} />;
 }
 
-// Client-side button to trigger download
+// Client-side buttons
 import { ExportButtonClient } from "./export-button-client";
+import { BundleExportClient } from "./bundle-export-client";
