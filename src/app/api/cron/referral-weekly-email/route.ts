@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Resend } from "resend";
 import { MILESTONE_TIERS } from "@/lib/referrals";
-import { getFromAddress } from "@/lib/resend";
+import { getFromAddress, sendEmail } from "@/lib/resend";
 import { createLogger, writeSystemLog } from "@/lib/logger";
 
 export const maxDuration = 60;
@@ -17,7 +16,6 @@ export async function POST(request: NextRequest) {
 
   const timer = log.timed("execute");
   const admin = createAdminClient();
-  const resend = new Resend(process.env.RESEND_API_KEY);
 
   // --- Run milestone check inline ---
   const { data: allEntries } = await admin
@@ -105,8 +103,8 @@ export async function POST(request: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
     const referralLink = `${siteUrl}/events?ref=${referrer.code}`;
 
-    try {
-      await resend.emails.send({
+    const result = await sendEmail(
+      {
         from: getFromAddress(),
         to: email,
         subject: `Your Referral Update — Rank #${referrer.rank ?? "—"}`,
@@ -124,10 +122,13 @@ export async function POST(request: NextRequest) {
           <br/>
           <p>— Making Miles Matter</p>
         `,
-      });
+      },
+      "referral-weekly"
+    );
+    if (result.success) {
       sent++;
-    } catch (err) {
-      errors.push(`${email}: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } else {
+      errors.push(`${email}: ${result.error ?? "Unknown error"}`);
     }
   }
 

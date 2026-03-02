@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Resend } from "resend";
-import { getFromAddress } from "@/lib/resend";
+import { getFromAddress, sendEmail } from "@/lib/resend";
 import { createLogger, writeSystemLog } from "@/lib/logger";
 
 export const maxDuration = 60;
@@ -34,7 +33,6 @@ export async function POST(request: NextRequest) {
   const testMode = request.nextUrl.searchParams.get("test") === "true";
 
   const admin = createAdminClient();
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
 
@@ -240,18 +238,19 @@ export async function POST(request: NextRequest) {
   const errors: string[] = [];
 
   for (const recipient of recipients) {
-    try {
-      await resend.emails.send({
+    const result = await sendEmail(
+      {
         from: getFromAddress(),
         to: recipient.email,
         subject: "This Week's Ride Schedule — Making Miles Matter",
         html: emailHtml,
-      });
+      },
+      "weekly-ride"
+    );
+    if (result.success) {
       sent++;
-    } catch (err) {
-      errors.push(
-        `${recipient.email}: ${err instanceof Error ? err.message : "Unknown error"}`
-      );
+    } else {
+      errors.push(`${recipient.email}: ${result.error ?? "Unknown error"}`);
     }
   }
 
