@@ -1,5 +1,6 @@
 import { Hero } from "@/components/layout/hero";
 import { stripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Card,
   CardContent,
@@ -16,9 +17,13 @@ export const metadata = { title: "Registration Confirmed | MMM Event OS" };
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string; free?: string }>;
+  searchParams: Promise<{
+    session_id?: string;
+    free?: string;
+    registration_id?: string;
+  }>;
 }) {
-  const { session_id, free } = await searchParams;
+  const { session_id, free, registration_id } = await searchParams;
   const isFree = free === "true";
 
   let session = null;
@@ -28,6 +33,31 @@ export default async function SuccessPage({
     } catch {
       // Invalid session — show generic confirmation
     }
+  }
+
+  // Load registration details from DB for waiver info
+  let registration: {
+    distance: string | null;
+    waiver_version: string | null;
+    waiver_accepted_at: string | null;
+    waiver_ip: string | null;
+    referral_code: string | null;
+    amount: number;
+  } | null = null;
+
+  const regId =
+    registration_id || session?.metadata?.registration_id || null;
+
+  if (regId) {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("registrations")
+      .select(
+        "distance, waiver_version, waiver_accepted_at, waiver_ip, referral_code, amount"
+      )
+      .eq("id", regId)
+      .single();
+    registration = data;
   }
 
   const meta = session?.metadata;
@@ -50,47 +80,56 @@ export default async function SuccessPage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {meta && (
-              <div className="rounded-lg border p-4 text-sm space-y-2">
-                {meta.distance && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Distance</span>
-                    <span className="font-medium">{meta.distance}</span>
-                  </div>
-                )}
-                {session_id && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Confirmation</span>
-                    <span className="font-mono text-xs">
-                      {session_id.slice(-8).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                {meta.referral_code && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Referral</span>
-                    <span className="font-medium">{meta.referral_code}</span>
-                  </div>
-                )}
-                {meta.waiver_accepted_at && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Waiver signed</span>
-                    <span className="font-mono text-xs">
-                      {new Date(meta.waiver_accepted_at).toLocaleString()} from {meta.waiver_ip}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isFree && !meta && (
-              <div className="rounded-lg border p-4 text-sm space-y-2">
+            <div className="rounded-lg border p-4 text-sm space-y-2">
+              {(registration?.distance || meta?.distance) && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Distance</span>
+                  <span className="font-medium">
+                    {registration?.distance || meta?.distance}
+                  </span>
+                </div>
+              )}
+              {session_id && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Confirmation</span>
+                  <span className="font-mono text-xs">
+                    {session_id.slice(-8).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              {(registration?.referral_code || meta?.referral_code) && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Referral</span>
+                  <span className="font-medium">
+                    {registration?.referral_code || meta?.referral_code}
+                  </span>
+                </div>
+              )}
+              {registration?.waiver_version && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Waiver version</span>
+                  <span className="font-mono text-xs">
+                    {registration.waiver_version}
+                  </span>
+                </div>
+              )}
+              {registration?.waiver_accepted_at && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Waiver signed</span>
+                  <span className="font-mono text-xs">
+                    {new Date(registration.waiver_accepted_at).toLocaleString()}
+                    {registration.waiver_ip &&
+                      ` from ${registration.waiver_ip}`}
+                  </span>
+                </div>
+              )}
+              {isFree && !registration && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span className="font-medium">Free registration</span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-center">
               <Link href="/events">

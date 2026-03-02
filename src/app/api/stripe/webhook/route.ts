@@ -38,71 +38,154 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const meta = session.metadata || {};
 
-      // Upsert registration with waiver fields from metadata
-      const { error: regError } = await supabase
-        .from("registrations")
-        .upsert(
-          {
-            org_id: meta.org_id,
-            event_id: meta.event_id,
-            user_id: meta.user_id || null,
-            distance: meta.distance || "",
+      // Prefer updating existing registration by registration_id (new flow).
+      // Fall back to upsert by stripe_session_id for backward compatibility.
+      if (meta.registration_id) {
+        // Verify the registration exists and has waiver accepted
+        const { data: existing } = await supabase
+          .from("registrations")
+          .select("id, waiver_accepted, status")
+          .eq("id", meta.registration_id)
+          .single();
+
+        if (!existing) {
+          console.error(
+            `Registration ${meta.registration_id} not found for session ${session.id}`
+          );
+          return NextResponse.json(
+            { error: "Registration not found" },
+            { status: 500 }
+          );
+        }
+
+        // Idempotency: if already paid, skip
+        if (existing.status === "paid") {
+          console.log(
+            `Registration ${existing.id} already paid — skipping duplicate webhook`
+          );
+          break;
+        }
+
+        if (!existing.waiver_accepted) {
+          console.error(
+            `Registration ${existing.id} has waiver_accepted=false — refusing to mark paid`
+          );
+          return NextResponse.json(
+            { error: "Cannot mark paid: waiver not accepted" },
+            { status: 400 }
+          );
+        }
+
+        const { error: updateError } = await supabase
+          .from("registrations")
+          .update({
+            status: "paid",
             stripe_session_id: session.id,
             stripe_payment_intent_id:
               typeof session.payment_intent === "string"
                 ? session.payment_intent
                 : session.payment_intent?.id || null,
             amount: session.amount_total || 0,
-            status: "paid",
-            referral_code: meta.referral_code || null,
             email: session.customer_email || null,
-            waiver_accepted: meta.waiver_accepted === "true",
-            waiver_accepted_at: meta.waiver_accepted_at || null,
-            waiver_ip: meta.waiver_ip || null,
-            waiver_user_agent: meta.waiver_user_agent || null,
-            waiver_version: meta.waiver_version || null,
-          },
-          { onConflict: "stripe_session_id" }
-        );
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
 
-      if (regError) {
-        console.error("Failed to upsert registration:", regError);
-        return NextResponse.json(
-          { error: "Database error" },
-          { status: 500 }
-        );
-      }
+        if (updateError) {
+          console.error("Failed to update registration:", updateError);
+          return NextResponse.json(
+            { error: "Database error" },
+            { status: 500 }
+          );
+        }
 
-      // Only create referral credit for paid registrations (amount > 0)
-      if (meta.referral_code && (session.amount_total || 0) > 0) {
-        const { data: reg } = await supabase
-          .from("registrations")
-          .select("id")
-          .eq("stripe_session_id", session.id)
-          .single();
-
-        if (reg) {
-          // Check if credit already exists to prevent duplicates on webhook retry
-          const { data: existing } = await supabase
+        // Referral credit — only for paid registrations with amount > 0
+        if (meta.referral_code && (session.amount_total || 0) > 0) {
+          const { data: creditExists } = await supabase
             .from("referral_credits")
             .select("id")
-            .eq("registration_id", reg.id)
+            .eq("registration_id", existing.id)
             .limit(1);
 
-          if (!existing || existing.length === 0) {
+          if (!creditExists || creditExists.length === 0) {
             await supabase.from("referral_credits").insert({
               org_id: meta.org_id,
-              registration_id: reg.id,
+              registration_id: existing.id,
               referral_code: meta.referral_code,
-              amount: 500, // $5.00 referral credit
+              amount: 500,
             });
           }
         }
-      }
 
-      console.log(
-        `Registration created: session=${session.id}, event=${meta.event_id}`
-      );
+        console.log(
+          `Registration updated to paid: ${existing.id}, session=${session.id}`
+        );
+      } else {
+        // Legacy flow — upsert by stripe_session_id (no registration_id in metadata)
+        const { error: regError } = await supabase
+          .from("registrations")
+          .upsert(
+            {
+              org_id: meta.org_id,
+              event_id: meta.event_id,
+              user_id: meta.user_id || null,
+              distance: meta.distance || "",
+              stripe_session_id: session.id,
+              stripe_payment_intent_id:
+                typeof session.payment_intent === "string"
+                  ? session.payment_intent
+                  : session.payment_intent?.id || null,
+              amount: session.amount_total || 0,
+              status: "paid",
+              referral_code: meta.referral_code || null,
+              email: session.customer_email || null,
+              waiver_accepted: meta.waiver_accepted === "true",
+              waiver_accepted_at: meta.waiver_accepted_at || null,
+              waiver_ip: meta.waiver_ip || null,
+              waiver_user_agent: meta.waiver_user_agent || null,
+              waiver_version: meta.waiver_version || null,
+            },
+            { onConflict: "stripe_session_id" }
+          );
+
+        if (regError) {
+          console.error("Failed to upsert registration:", regError);
+          return NextResponse.json(
+            { error: "Database error" },
+            { status: 500 }
+          );
+        }
+
+        // Referral credit — only for paid registrations (amount > 0)
+        if (meta.referral_code && (session.amount_total || 0) > 0) {
+          const { data: reg } = await supabase
+            .from("registrations")
+            .select("id")
+            .eq("stripe_session_id", session.id)
+            .single();
+
+          if (reg) {
+            const { data: existing } = await supabase
+              .from("referral_credits")
+              .select("id")
+              .eq("registration_id", reg.id)
+              .limit(1);
+
+            if (!existing || existing.length === 0) {
+              await supabase.from("referral_credits").insert({
+                org_id: meta.org_id,
+                registration_id: reg.id,
+                referral_code: meta.referral_code,
+                amount: 500,
+              });
+            }
+          }
+        }
+
+        console.log(
+          `Registration created (legacy): session=${session.id}, event=${meta.event_id}`
+        );
+      }
       break;
     }
 
@@ -115,7 +198,6 @@ export async function POST(request: Request) {
 
       if (!paymentIntentId) break;
 
-      // Find registration by payment intent
       const { data: reg } = await supabase
         .from("registrations")
         .select("id")
@@ -123,13 +205,11 @@ export async function POST(request: Request) {
         .single();
 
       if (reg) {
-        // Update registration status
         await supabase
           .from("registrations")
           .update({ status: "refunded", updated_at: new Date().toISOString() })
           .eq("id", reg.id);
 
-        // Void any referral credits for this registration
         await supabase
           .from("referral_credits")
           .update({ voided: true })
@@ -141,7 +221,6 @@ export async function POST(request: Request) {
     }
 
     default:
-      // Unhandled event type — acknowledge receipt
       console.log(`Unhandled event type: ${event.type}`);
   }
 
