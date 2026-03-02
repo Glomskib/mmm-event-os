@@ -8,7 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
+import Link from "next/link";
 
 export const metadata = { title: "Events | MMM Event OS" };
 
@@ -50,7 +52,7 @@ export default async function EventsPage() {
                   </div>
                   <CardDescription>{event.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <CardContent className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span>
@@ -69,6 +71,11 @@ export default async function EventsPage() {
                       <span>{event.location}</span>
                     </div>
                   )}
+                  <Link href={`/waiver?event_id=${event.id}`}>
+                    <Button className="mt-2 w-full" size="sm">
+                      Register
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             ))}

@@ -43,3 +43,25 @@ export function getPrice(eventTitle: string, distance: string): number {
   }
   return FALLBACK_PRICE;
 }
+
+/**
+ * Get available distances with prices for an event.
+ * Returns array of { distance, price } sorted by price ascending.
+ */
+export function getDistances(
+  eventTitle: string
+): { distance: string; price: number }[] {
+  for (const rule of PRICING_RULES) {
+    if (rule.pattern.test(eventTitle)) {
+      const entries = Object.entries(rule.prices);
+      if (entries.length > 0) {
+        return entries
+          .map(([distance, price]) => ({ distance, price }))
+          .sort((a, b) => a.price - b.price);
+      }
+      // Event with defaultPrice only — no named distances
+      return [];
+    }
+  }
+  return [];
+}
