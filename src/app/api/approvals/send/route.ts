@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminOrNull } from "@/lib/require-admin";
 import { getFromAddress, sendEmail } from "@/lib/resend";
+import { publishPost } from "@/lib/late";
 import { writeSystemLog } from "@/lib/logger";
+import type { Json } from "@/lib/database.types";
 
 export async function POST(request: NextRequest) {
   const admin = await getAdminOrNull();
@@ -36,15 +38,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!approval.body_html) {
-    return NextResponse.json(
-      { error: "No HTML body to send" },
-      { status: 400 }
-    );
-  }
-
-  // Determine recipients based on approval type
+  // ── Weekly Ride Email ───────────────────────────────────────────
   if (approval.type === "weekly_ride_email") {
+    if (!approval.body_html) {
+      return NextResponse.json(
+        { error: "No HTML body to send" },
+        { status: 400 }
+      );
+    }
+
     const { data: profiles } = await db
       .from("profiles")
       .select("email")
@@ -74,7 +76,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Mark as sent
     await db
       .from("approvals")
       .update({ status: "sent" })
@@ -94,7 +95,89 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Generic fallback: mark as sent (for social posts or future types)
+  // ── Social Post → Late.dev ──────────────────────────────────────
+  if (approval.type === "social_post") {
+    const bodyJson = approval.body_json as Record<string, unknown> | null;
+    const content = (bodyJson?.content as string) ?? approval.title;
+    const channelTargets =
+      (approval.channel_targets as Record<string, boolean> | null) ?? {};
+    const mediaUrls = (approval.media_urls as string[] | null) ?? [];
+
+    if (Object.keys(channelTargets).length === 0) {
+      return NextResponse.json(
+        { error: "No channel_targets set on this approval" },
+        { status: 400 }
+      );
+    }
+
+    // Check scheduled_for in future
+    if (approval.scheduled_for) {
+      const scheduledTime = new Date(approval.scheduled_for);
+      if (scheduledTime > new Date()) {
+        await db
+          .from("approvals")
+          .update({ status: "scheduled" })
+          .eq("id", id);
+
+        writeSystemLog("approval:schedule", `Scheduled: ${approval.title}`, {
+          approvalId: id,
+          scheduledFor: approval.scheduled_for,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          mode: "scheduled",
+          scheduledFor: approval.scheduled_for,
+        });
+      }
+    }
+
+    writeSystemLog("late:publish-attempt", `Publishing: ${approval.title}`, {
+      approvalId: id,
+      channels: Object.keys(channelTargets).filter((k) => channelTargets[k]),
+      publishedBy: admin.id,
+    });
+
+    const result = await publishPost({ content, channelTargets, mediaUrls });
+
+    if (result.success) {
+      await db
+        .from("approvals")
+        .update({
+          status: "sent",
+          publish_result: (result.data ?? {}) as Json,
+          error_message: null,
+        })
+        .eq("id", id);
+
+      writeSystemLog("approval:publish", `Published: ${approval.title}`, {
+        approvalId: id,
+        postId: result.postId,
+        publishedBy: admin.id,
+      });
+
+      return NextResponse.json({ ok: true, postId: result.postId });
+    }
+
+    // Publish failed — keep approved so admin can retry
+    await db
+      .from("approvals")
+      .update({
+        error_message: result.error ?? "Unknown error",
+        publish_result: (result.data ?? null) as Json,
+      })
+      .eq("id", id);
+
+    writeSystemLog("approval:publish-fail", `Failed: ${approval.title}`, {
+      approvalId: id,
+      error: result.error,
+      publishedBy: admin.id,
+    });
+
+    return NextResponse.json({ ok: false, error: result.error }, { status: 502 });
+  }
+
+  // ── Generic fallback ────────────────────────────────────────────
   await db
     .from("approvals")
     .update({ status: "sent" })

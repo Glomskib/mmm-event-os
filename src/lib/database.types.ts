@@ -44,12 +44,18 @@ export type Database = {
           approved_by: string | null
           body_html: string | null
           body_json: Json | null
+          channel_targets: Json | null
           created_at: string
           created_by: string | null
+          error_message: string | null
           id: string
+          media_urls: string[] | null
           org_id: string
+          publish_result: Json | null
+          published_url: string | null
           rejected_by: string | null
           reviewer_notes: string | null
+          scheduled_for: string | null
           status: string
           title: string
           type: string
@@ -59,12 +65,18 @@ export type Database = {
           approved_by?: string | null
           body_html?: string | null
           body_json?: Json | null
+          channel_targets?: Json | null
           created_at?: string
           created_by?: string | null
+          error_message?: string | null
           id?: string
+          media_urls?: string[] | null
           org_id: string
+          publish_result?: Json | null
+          published_url?: string | null
           rejected_by?: string | null
           reviewer_notes?: string | null
+          scheduled_for?: string | null
           status?: string
           title: string
           type: string
@@ -74,12 +86,18 @@ export type Database = {
           approved_by?: string | null
           body_html?: string | null
           body_json?: Json | null
+          channel_targets?: Json | null
           created_at?: string
           created_by?: string | null
+          error_message?: string | null
           id?: string
+          media_urls?: string[] | null
           org_id?: string
+          publish_result?: Json | null
+          published_url?: string | null
           rejected_by?: string | null
           reviewer_notes?: string | null
+          scheduled_for?: string | null
           status?: string
           title?: string
           type?: string

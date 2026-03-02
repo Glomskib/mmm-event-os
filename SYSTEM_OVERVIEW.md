@@ -106,6 +106,8 @@ curl -s -X POST 'http://localhost:3001/api/cron/weekly-ride-email?test=true' \
 | `NEXT_PUBLIC_APP_URL` | Yes | App base URL (e.g., `http://localhost:3001`) |
 | `WELCOME_EMAIL_ENABLED` | No | Set to `false` to disable welcome emails |
 | `WEEKLY_RIDE_EMAIL_APPROVAL_MODE` | No | Set to `true` to create drafts instead of sending immediately |
+| `LATE_API_KEY` | No | Late.dev API key for social publishing |
+| `LATE_BASE_URL` | No | Late.dev API base URL (default: `https://getlate.dev/api/v1`) |
 
 ---
 
@@ -129,6 +131,7 @@ Migrations must be applied sequentially:
 00013_profile_welcome_email_sent.sql
 00014_system_logs.sql
 00015_approval_queue.sql
+00016_social_post_fields.sql
 ```
 
 **Apply all:** `supabase db reset` (local) or apply individually via Supabase dashboard.
@@ -211,4 +214,5 @@ All admin pages require `role = 'admin'` (enforced by admin layout guard).
 | `src/lib/require-admin.ts` | Admin role guard for routes |
 | `src/lib/validators.ts` | Input validation helpers |
 | `src/lib/stripe.ts` | Stripe client instance |
+| `src/lib/late.ts` | Late.dev social publishing client + health check |
 | `src/lib/waiver-pdf.ts` | PDF generation for waivers |

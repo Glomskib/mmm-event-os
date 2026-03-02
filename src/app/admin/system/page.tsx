@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { LateHealthCheck } from "./late-health-client";
 
 export const metadata = { title: "System Health | Admin | MMM Event OS" };
 
@@ -24,6 +25,7 @@ const REQUIRED_ENV_VARS = [
   "RESEND_FROM",
   "MMM_ADMIN_EMAIL",
   "WELCOME_EMAIL_ENABLED",
+  "LATE_API_KEY",
 ] as const;
 
 export default async function SystemHealthPage() {
@@ -142,6 +144,19 @@ export default async function SystemHealthPage() {
                 {connectivityCheck ? "Connected" : "Connection Failed"}
               </span>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Late.dev Connectivity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Late.dev Connectivity</CardTitle>
+            <CardDescription>
+              Social publishing API — click to check connection
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LateHealthCheck />
           </CardContent>
         </Card>
 
