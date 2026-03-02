@@ -1,6 +1,7 @@
 import { Hero } from "@/components/layout/hero";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { ReferralShareCard } from "./referral-share-card";
 
 export const metadata = { title: "Registration Confirmed | MMM Event OS" };
 
@@ -49,8 +51,8 @@ export default async function SuccessPage({
     registration_id || session?.metadata?.registration_id || null;
 
   if (regId) {
-    const supabase = createAdminClient();
-    const { data } = await supabase
+    const db = createAdminClient();
+    const { data } = await db
       .from("registrations")
       .select(
         "distance, waiver_version, waiver_accepted_at, waiver_ip, referral_code, amount"
@@ -58,6 +60,22 @@ export default async function SuccessPage({
       .eq("id", regId)
       .single();
     registration = data;
+  }
+
+  // Fetch logged-in user's own referral code for sharing
+  let userReferralCode: string | null = null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: codeRow } = await supabase
+      .from("referral_codes")
+      .select("code")
+      .eq("user_id", user.id)
+      .single();
+    userReferralCode = codeRow?.code ?? null;
   }
 
   const meta = session?.metadata;
@@ -141,6 +159,11 @@ export default async function SuccessPage({
             </div>
           </CardContent>
         </Card>
+
+        {/* Referral share section */}
+        {userReferralCode && (
+          <ReferralShareCard code={userReferralCode} />
+        )}
       </section>
     </>
   );

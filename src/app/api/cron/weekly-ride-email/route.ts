@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getFromAddress, sendEmail } from "@/lib/resend";
 import { createLogger, writeSystemLog } from "@/lib/logger";
+import { getMilestoneProgress } from "@/lib/referrals";
 import type { Json } from "@/lib/database.types";
 
 export const maxDuration = 60;
@@ -37,7 +38,42 @@ interface RideForEmail {
   route_wahoo_url: string | null;
 }
 
-function buildRideEmailHtml(rides: RideForEmail[], siteUrl: string): string {
+interface ReferralInfo {
+  code: string;
+  count: number;
+  nextTierLabel: string | null;
+  nextTierReward: string | null;
+  remaining: number;
+}
+
+function buildReferralSection(ref: ReferralInfo, siteUrl: string): string {
+  const referralLink = `${siteUrl}/events?ref=${ref.code}`;
+
+  let progressLine = "";
+  if (ref.nextTierLabel && ref.remaining > 0) {
+    progressLine = `<p style="margin:0 0 8px 0;font-size:14px;color:#4b5563;">
+      <strong>${ref.remaining} more referral${ref.remaining === 1 ? "" : "s"}</strong> to reach
+      <strong>${ref.nextTierLabel}</strong> (${ref.nextTierReward})
+    </p>`;
+  } else if (ref.count > 0 && !ref.nextTierLabel) {
+    progressLine = `<p style="margin:0 0 8px 0;font-size:14px;color:#166534;font-weight:600;">All milestones unlocked!</p>`;
+  }
+
+  return `
+    <div style="margin-top:24px;padding:20px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+      <h3 style="margin:0 0 8px 0;font-size:16px;color:#1e3a5f;">Your Referrals: ${ref.count}</h3>
+      ${progressLine}
+      <p style="margin:0 0 12px 0;font-size:13px;color:#6b7280;">
+        Share your link and earn raffle tickets + rewards for every friend who registers.
+      </p>
+      <a href="${referralLink}" style="display:inline-block;padding:10px 20px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">
+        Share Your Link
+      </a>
+    </div>
+  `;
+}
+
+function buildRideEmailHtml(rides: RideForEmail[], siteUrl: string, referral?: ReferralInfo): string {
   // Group by date
   const grouped = new Map<string, RideForEmail[]>();
   for (const ride of rides) {
@@ -114,6 +150,8 @@ function buildRideEmailHtml(rides: RideForEmail[], siteUrl: string): string {
 
       <div style="padding:24px;background:#fff;">
         ${ridesHtml}
+
+        ${referral ? buildReferralSection(referral, siteUrl) : ""}
 
         <div style="margin-top:32px;text-align:center;border-top:1px solid #e5e7eb;padding-top:24px;">
           <a href="${siteUrl}/rides" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">View All Rides</a>
@@ -262,7 +300,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- DIRECT SEND MODE ---
-  let recipients: { email: string }[];
+  let recipients: { id: string; email: string }[];
 
   if (testMode) {
     const testEmail = process.env.MMM_ADMIN_EMAIL;
@@ -272,11 +310,11 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    recipients = [{ email: testEmail }];
+    recipients = [{ id: "test", email: testEmail }];
   } else {
     const { data: profiles } = await admin
       .from("profiles")
-      .select("email")
+      .select("id, email")
       .eq("org_id", org.id)
       .eq("marketing_opt_in", true)
       .not("email", "is", null);
@@ -284,16 +322,61 @@ export async function POST(request: NextRequest) {
     recipients = profiles ?? [];
   }
 
+  // Batch-fetch referral codes + counts for all recipients
+  const recipientIds = recipients.map((r) => r.id).filter((id) => id !== "test");
+  const { data: refEntries } = recipientIds.length > 0
+    ? await admin
+        .from("referral_leaderboard_v")
+        .select("user_id, code, referral_count")
+        .eq("org_id", org.id)
+        .in("user_id", recipientIds)
+    : { data: [] };
+
+  // Also fetch codes for users with 0 referrals (not on leaderboard)
+  const { data: allCodes } = recipientIds.length > 0
+    ? await admin
+        .from("referral_codes")
+        .select("user_id, code")
+        .eq("org_id", org.id)
+        .in("user_id", recipientIds)
+    : { data: [] };
+
+  const refMap = new Map(
+    (refEntries ?? []).map((e) => [e.user_id, { code: e.code!, count: e.referral_count ?? 0 }])
+  );
+  const codeMap = new Map(
+    (allCodes ?? []).map((c) => [c.user_id, c.code])
+  );
+
   let sent = 0;
   const errors: string[] = [];
 
   for (const recipient of recipients) {
+    // Build per-user referral info
+    let referralInfo: ReferralInfo | undefined;
+    const refData = refMap.get(recipient.id);
+    const code = refData?.code ?? codeMap.get(recipient.id);
+
+    if (code) {
+      const count = refData?.count ?? 0;
+      const { nextTier } = getMilestoneProgress(count);
+      referralInfo = {
+        code,
+        count,
+        nextTierLabel: nextTier?.label ?? null,
+        nextTierReward: nextTier?.reward ?? null,
+        remaining: nextTier ? nextTier.count - count : 0,
+      };
+    }
+
+    const personalizedHtml = buildRideEmailHtml(rides, siteUrl, referralInfo);
+
     const result = await sendEmail(
       {
         from: getFromAddress(),
         to: recipient.email,
         subject: emailSubject,
-        html: emailHtml,
+        html: personalizedHtml,
       },
       "weekly-ride"
     );
