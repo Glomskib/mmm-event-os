@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/client";
 
 type DistanceOption = { distance: string; price: number };
 
@@ -40,6 +41,7 @@ export default function WaiverPage() {
 
   // Dev-only scroll gate bypass
   const [devBypassScroll, setDevBypassScroll] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Event info + distance selection
   const [eventTitle, setEventTitle] = useState<string | null>(null);
@@ -52,6 +54,20 @@ export default function WaiverPage() {
   const [participantEmail, setParticipantEmail] = useState("");
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+
+  // Auth gate — redirect to /register if not signed in
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        const dest = `/register?event_id=${eventId}${distanceParam ? `&distance=${encodeURIComponent(distanceParam)}` : ""}`;
+        router.replace(dest);
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-fill from profile (gracefully handles 401 / missing data)
   useEffect(() => {
@@ -272,6 +288,19 @@ export default function WaiverPage() {
       setError("Network error. Please check your connection and try again.");
       setIsSubmitting(false);
     }
+  }
+
+  // Show nothing while auth check is in-flight (avoids flash of unauthenticated content)
+  if (!authChecked) {
+    return (
+      <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">Checking session…</p>
+          </CardContent>
+        </Card>
+      </section>
+    );
   }
 
   if (!eventId) {
