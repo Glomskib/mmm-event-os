@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -71,7 +71,7 @@ export default async function EventsPage() {
                           {event.title}
                         </CardTitle>
                       </Link>
-                      <Badge variant="secondary">{event.status}</Badge>
+                      <StatusBadge status={event.status} />
                     </div>
                     <CardDescription>{event.description}</CardDescription>
                   </CardHeader>
