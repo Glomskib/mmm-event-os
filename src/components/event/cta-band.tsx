@@ -1,15 +1,24 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Bike } from "lucide-react";
+import { RiderStats } from "@/components/event/rider-stats";
+import type { RegistrationStats } from "@/lib/registration-stats";
 
 interface CTABandProps {
   eventSlug: string;
   /** User's cumulative HHH miles, or null if not authenticated / no history. */
   userMiles: number | null;
+  stats: RegistrationStats;
+  registrationOpen: boolean;
 }
 
 /** Mid-page CTA band for HHH events. Navy background, orange accents. */
-export function CTABand({ eventSlug, userMiles }: CTABandProps) {
+export function CTABand({
+  eventSlug,
+  userMiles,
+  stats,
+  registrationOpen,
+}: CTABandProps) {
   return (
     <div
       className="rounded-xl px-6 py-8 text-center"
@@ -32,6 +41,15 @@ export function CTABand({ eventSlug, userMiles }: CTABandProps) {
           — keep the streak alive.
         </p>
       )}
+
+      {/* Rider count + progress bar above register button */}
+      <div className="mx-auto mt-5 max-w-xs">
+        <RiderStats
+          stats={stats}
+          registrationOpen={registrationOpen}
+          variant="full"
+        />
+      </div>
 
       <Link href={`/register/${eventSlug}`} className="mt-5 inline-block">
         <Button

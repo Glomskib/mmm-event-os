@@ -16,6 +16,7 @@ import { MarketingIncentiveBanner } from "@/components/marketing/event-incentive
 import { EventSocialProof } from "@/components/marketing/event-social-proof";
 import { Suspense } from "react";
 import { getEventMedia, getActiveSponsors } from "@/lib/media";
+import { getEventRegistrationStats } from "@/lib/registration-stats";
 import { HeroMedia } from "@/components/media/hero-media";
 import { MediaGallery } from "@/components/media/media-gallery";
 import { VideoEmbed } from "@/components/media/video-embed";
@@ -24,6 +25,9 @@ import { CTABand } from "@/components/event/cta-band";
 import { SponsorsSection } from "@/components/event/sponsors-section";
 import { RouteSection } from "@/components/event/route-section";
 import { TestimonialsSection } from "@/components/event/testimonials-section";
+import { RiderStats } from "@/components/event/rider-stats";
+import { EventCountdown } from "@/components/event/event-countdown";
+import { AnnualBadge } from "@/components/event/annual-badge";
 import { getCurrentOrg } from "@/lib/org";
 
 export async function generateMetadata({
@@ -60,13 +64,16 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   const isHHH = event.series_key === "hhh";
+  const registrationOpen = event.registration_open ?? true;
   const incentive = getMarketingIncentive(event.title);
   const eventSlug = event.slug ?? slugify(event.title);
+  const eventYear = new Date(event.date).getFullYear();
 
-  // Media, sponsors, and HHH-specific data fetched in parallel
-  const [media, org] = await Promise.all([
+  // All data fetched in parallel
+  const [media, org, regStats] = await Promise.all([
     getEventMedia(event.id),
     getCurrentOrg(),
+    getEventRegistrationStats(event.id, event.capacity ?? null),
   ]);
 
   const [sponsors, legacyStats, userMiles] = await Promise.all([
@@ -116,6 +123,18 @@ export default async function EventDetailPage({
           <HeroMedia asset={heroAsset} eventTitle={event.title} />
         )}
 
+        {/* Countdown — below hero, urgency only when registration is open */}
+        {registrationOpen && (
+          <EventCountdown eventDate={event.date} />
+        )}
+
+        {/* Inline rider stats */}
+        <RiderStats
+          stats={regStats}
+          registrationOpen={registrationOpen}
+          variant="inline"
+        />
+
         {/* Secondary hero images */}
         {media.hero_secondary.length > 0 && (
           <MediaGallery assets={media.hero_secondary} />
@@ -133,7 +152,10 @@ export default async function EventDetailPage({
         {/* Event info card */}
         <Card>
           <CardHeader>
-            <CardTitle>{event.title}</CardTitle>
+            <div className="flex items-start justify-between gap-3">
+              <CardTitle>{event.title}</CardTitle>
+              {isHHH && <AnnualBadge eventYear={eventYear} />}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -210,9 +232,14 @@ export default async function EventDetailPage({
         {/* Testimonials */}
         <TestimonialsSection assets={media.testimonial} />
 
-        {/* HHH CTA band */}
+        {/* HHH CTA band with rider stats above button */}
         {isHHH && (
-          <CTABand eventSlug={eventSlug} userMiles={userMiles} />
+          <CTABand
+            eventSlug={eventSlug}
+            userMiles={userMiles}
+            stats={regStats}
+            registrationOpen={registrationOpen}
+          />
         )}
 
         {/* Sponsors */}

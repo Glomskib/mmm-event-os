@@ -173,6 +173,7 @@ export type Database = {
       }
       events: {
         Row: {
+          capacity: number | null
           created_at: string
           date: string
           description: string | null
@@ -181,12 +182,14 @@ export type Database = {
           image_url: string | null
           location: string | null
           org_id: string
+          registration_open: boolean
           series_key: string
           slug: string | null
           status: Database["public"]["Enums"]["event_status"]
           title: string
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
           date: string
           description?: string | null
@@ -195,12 +198,14 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id: string
+          registration_open?: boolean
           series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
           title: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
           date?: string
           description?: string | null
@@ -209,6 +214,7 @@ export type Database = {
           image_url?: string | null
           location?: string | null
           org_id?: string
+          registration_open?: boolean
           series_key?: string
           slug?: string | null
           status?: Database["public"]["Enums"]["event_status"]
