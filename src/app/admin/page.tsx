@@ -19,6 +19,9 @@ import {
   Activity,
   ShieldCheck,
   Share2,
+  Film,
+  Wand2,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -110,11 +113,32 @@ const adminCards = [
     color: "text-teal-600",
   },
   {
+    title: "Wheels & Reels",
+    description: "Manage films and monthly voting.",
+    icon: Film,
+    href: "/admin/wheels-and-reels",
+    color: "text-rose-600",
+  },
+  {
+    title: "Social Drafts",
+    description: "Auto-generate weekly social post drafts.",
+    icon: Wand2,
+    href: "/admin/social-drafts",
+    color: "text-purple-600",
+  },
+  {
     title: "System",
     description: "Health checks, env status, and execution logs.",
     icon: Activity,
     href: "/admin/system",
     color: "text-slate-600",
+  },
+  {
+    title: "Launch Checklist",
+    description: "Pre-launch readiness checks for go-live.",
+    icon: Rocket,
+    href: "/admin/launch",
+    color: "text-lime-600",
   },
 ];
 
