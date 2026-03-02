@@ -37,8 +37,7 @@ export default async function RootLayout({
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
-      .single()
-      .then((res) => res as { data: { full_name: string | null } | null; error: unknown });
+      .single();
 
     navUser = {
       email: user.email!,

@@ -1,6 +1,5 @@
 import { Hero } from "@/components/layout/hero";
 import { createClient } from "@/lib/supabase/server";
-import type { RideSeries, RideOccurrence } from "@/lib/database.types";
 import {
   Card,
   CardContent,
@@ -27,8 +26,7 @@ export default async function RidesPage() {
   const { data: series } = await supabase
     .from("ride_series")
     .select("*")
-    .order("day_of_week", { ascending: true })
-    .returns<RideSeries[]>();
+    .order("day_of_week", { ascending: true });
 
   const { data: occurrences } = await supabase
     .from("ride_occurrences")
@@ -36,8 +34,7 @@ export default async function RidesPage() {
     .gte("date", new Date().toISOString().split("T")[0])
     .eq("cancelled", false)
     .order("date", { ascending: true })
-    .limit(10)
-    .returns<(RideOccurrence & { ride_series: RideSeries | null })[]>();
+    .limit(10);
 
   return (
     <>

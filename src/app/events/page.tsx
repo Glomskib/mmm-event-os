@@ -1,6 +1,5 @@
 import { Hero } from "@/components/layout/hero";
 import { createClient } from "@/lib/supabase/server";
-import type { Event } from "@/lib/database.types";
 import {
   Card,
   CardContent,
@@ -20,8 +19,7 @@ export default async function EventsPage() {
     .from("events")
     .select("*")
     .eq("status", "published")
-    .order("date", { ascending: true })
-    .returns<Event[]>();
+    .order("date", { ascending: true });
 
   return (
     <>
