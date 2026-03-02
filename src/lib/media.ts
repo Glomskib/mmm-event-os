@@ -84,6 +84,7 @@ export async function getAllEntityMedia(entityId: string): Promise<MediaAsset[]>
 export type SponsorRow =
   Database["public"]["Tables"]["sponsors"]["Row"];
 
+/** Sponsors shown on event pages (committed/paid, show_on_event_page = true). */
 const fetchActiveSponsors = unstable_cache(
   async (orgId: string): Promise<SponsorRow[]> => {
     const admin = createAdminClient();
@@ -92,6 +93,8 @@ const fetchActiveSponsors = unstable_cache(
       .select("*")
       .eq("org_id", orgId)
       .in("status", ["committed", "paid"])
+      .eq("show_on_event_page", true)
+      .order("display_order", { ascending: true })
       .order("name", { ascending: true });
     return (data ?? []) as SponsorRow[];
   },
@@ -101,4 +104,26 @@ const fetchActiveSponsors = unstable_cache(
 
 export async function getActiveSponsors(orgId: string): Promise<SponsorRow[]> {
   return fetchActiveSponsors(orgId);
+}
+
+/** Sponsors shown on the homepage (committed/paid, show_on_homepage = true). */
+const fetchHomepageSponsors = unstable_cache(
+  async (orgId: string): Promise<SponsorRow[]> => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("sponsors")
+      .select("*")
+      .eq("org_id", orgId)
+      .in("status", ["committed", "paid"])
+      .eq("show_on_homepage", true)
+      .order("display_order", { ascending: true })
+      .order("name", { ascending: true });
+    return (data ?? []) as SponsorRow[];
+  },
+  ["homepage-sponsors"],
+  { revalidate: 300 }
+);
+
+export async function getHomepageSponsors(orgId: string): Promise<SponsorRow[]> {
+  return fetchHomepageSponsors(orgId);
 }

@@ -48,6 +48,7 @@ import {
   generateEmailDraftFromTemplate,
   exportSponsorsCsv,
 } from "./actions";
+import { SPONSOR_TIERS } from "@/lib/sponsor-tiers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,10 @@ interface Sponsor {
   next_followup_at: string | null;
   owner_profile_id: string | null;
   created_at: string;
+  tier: string;
+  display_order: number;
+  show_on_homepage: boolean;
+  show_on_event_page: boolean;
 }
 
 interface Contact {
@@ -180,6 +185,12 @@ export function SponsorsClient({
   const [editNextFollowup, setEditNextFollowup] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
+  // Tier / display fields
+  const [editTier, setEditTier] = useState<string>("community");
+  const [editDisplayOrder, setEditDisplayOrder] = useState<string>("0");
+  const [editShowOnHomepage, setEditShowOnHomepage] = useState(false);
+  const [editShowOnEventPage, setEditShowOnEventPage] = useState(true);
+
   // Export state
   const [exporting, setExporting] = useState(false);
 
@@ -212,6 +223,10 @@ export function SponsorsClient({
         : ""
     );
     setEditNotes(sponsor.notes ?? "");
+    setEditTier(sponsor.tier ?? "community");
+    setEditDisplayOrder(String(sponsor.display_order ?? 0));
+    setEditShowOnHomepage(sponsor.show_on_homepage ?? false);
+    setEditShowOnEventPage(sponsor.show_on_event_page ?? true);
     setIntSummary("");
     setShowContactForm(false);
     setCtName("");
@@ -261,6 +276,10 @@ export function SponsorsClient({
         committedAmount: editCommitted ? parseInt(editCommitted) : 0,
         nextFollowupAt: editNextFollowup || null,
         notes: editNotes || undefined,
+        tier: editTier,
+        displayOrder: parseInt(editDisplayOrder) || 0,
+        showOnHomepage: editShowOnHomepage,
+        showOnEventPage: editShowOnEventPage,
       });
       if (res.ok) {
         setResult({ type: "success", message: "Sponsor updated." });
@@ -750,6 +769,7 @@ export function SponsorsClient({
                   <tr className="border-b bg-muted/50">
                     <th className="px-4 py-2 text-left font-medium">Name</th>
                     <th className="px-4 py-2 text-left font-medium">Status</th>
+                    <th className="px-4 py-2 text-left font-medium">Tier</th>
                     <th className="px-4 py-2 text-right font-medium">
                       Expected
                     </th>
@@ -779,6 +799,9 @@ export function SponsorsClient({
                         >
                           {s.status}
                         </Badge>
+                      </td>
+                      <td className="px-4 py-2 text-sm capitalize text-muted-foreground">
+                        {s.tier ?? "community"}
                       </td>
                       <td className="px-4 py-2 text-right">
                         ${(s.expected_amount ?? 0).toLocaleString()}
@@ -887,6 +910,54 @@ export function SponsorsClient({
                       rows={3}
                     />
                   </div>
+
+                  {/* Tier / Display */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label>Tier</Label>
+                      <select
+                        value={editTier}
+                        onChange={(e) => setEditTier(e.target.value)}
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        {SPONSOR_TIERS.map((t) => (
+                          <option key={t} value={t}>
+                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Display Order</Label>
+                      <Input
+                        type="number"
+                        value={editDisplayOrder}
+                        onChange={(e) => setEditDisplayOrder(e.target.value)}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={editShowOnHomepage}
+                        onChange={(e) => setEditShowOnHomepage(e.target.checked)}
+                        className="h-4 w-4 rounded border"
+                      />
+                      Show on Homepage
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={editShowOnEventPage}
+                        onChange={(e) => setEditShowOnEventPage(e.target.checked)}
+                        className="h-4 w-4 rounded border"
+                      />
+                      Show on Event Pages
+                    </label>
+                  </div>
+
                   <div className="flex gap-2">
                     <Button
                       size="sm"

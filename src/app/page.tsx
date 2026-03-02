@@ -8,6 +8,9 @@ import {
 } from "@/components/ui/card";
 import { Calendar, Bike, Trophy, Film } from "lucide-react";
 import Link from "next/link";
+import { getCurrentOrg } from "@/lib/org";
+import { getHomepageSponsors } from "@/lib/media";
+import { SponsorsSection } from "@/components/event/sponsors-section";
 
 const features = [
   {
@@ -36,7 +39,10 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const org = await getCurrentOrg();
+  const homepageSponsors = org ? await getHomepageSponsors(org.id) : [];
+
   return (
     <>
       <Hero
@@ -61,6 +67,14 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {homepageSponsors.length > 0 && (
+        <section className="border-t py-12">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SponsorsSection sponsors={homepageSponsors} />
+          </div>
+        </section>
+      )}
 
       <section className="border-t bg-muted/50 py-16">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">

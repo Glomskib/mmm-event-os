@@ -62,6 +62,10 @@ export async function updateSponsor(
     committedAmount?: number;
     notes?: string;
     nextFollowupAt?: string | null;
+    tier?: string;
+    displayOrder?: number;
+    showOnHomepage?: boolean;
+    showOnEventPage?: boolean;
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await getAdminOrNull();
@@ -81,6 +85,13 @@ export async function updateSponsor(
   if (updates.notes !== undefined) updateObj.notes = updates.notes || null;
   if (updates.nextFollowupAt !== undefined)
     updateObj.next_followup_at = updates.nextFollowupAt;
+  if (updates.tier !== undefined) updateObj.tier = updates.tier;
+  if (updates.displayOrder !== undefined)
+    updateObj.display_order = updates.displayOrder;
+  if (updates.showOnHomepage !== undefined)
+    updateObj.show_on_homepage = updates.showOnHomepage;
+  if (updates.showOnEventPage !== undefined)
+    updateObj.show_on_event_page = updates.showOnEventPage;
 
   const { error } = await db
     .from("sponsors")
@@ -408,6 +419,7 @@ export async function exportSponsorsCsv(): Promise<string> {
 
   const header = [
     "Name",
+    "Tier",
     "Status",
     "Expected $",
     "Committed $",
@@ -416,6 +428,8 @@ export async function exportSponsorsCsv(): Promise<string> {
     "Primary Contact",
     "Contact Email",
     "Next Follow-up",
+    "Show on Homepage",
+    "Show on Event Page",
     "Notes",
   ];
 
@@ -423,6 +437,7 @@ export async function exportSponsorsCsv(): Promise<string> {
     const primaryContact = (contactsBySponsor.get(s.id) ?? [])[0];
     return [
       s.name,
+      s.tier ?? "community",
       s.status,
       String(s.expected_amount ?? 0),
       String(s.committed_amount ?? 0),
@@ -433,6 +448,8 @@ export async function exportSponsorsCsv(): Promise<string> {
       s.next_followup_at
         ? new Date(s.next_followup_at).toLocaleDateString()
         : "",
+      s.show_on_homepage ? "yes" : "no",
+      s.show_on_event_page ? "yes" : "no",
       s.notes ?? "",
     ];
   });

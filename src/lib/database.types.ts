@@ -1185,6 +1185,7 @@ export type Database = {
           address: string | null
           committed_amount: number | null
           created_at: string
+          display_order: number
           expected_amount: number | null
           id: string
           name: string
@@ -1192,13 +1193,17 @@ export type Database = {
           notes: string | null
           org_id: string
           owner_profile_id: string | null
+          show_on_event_page: boolean
+          show_on_homepage: boolean
           status: Database["public"]["Enums"]["sponsor_status"]
+          tier: string
           website: string | null
         }
         Insert: {
           address?: string | null
           committed_amount?: number | null
           created_at?: string
+          display_order?: number
           expected_amount?: number | null
           id?: string
           name: string
@@ -1206,13 +1211,17 @@ export type Database = {
           notes?: string | null
           org_id: string
           owner_profile_id?: string | null
+          show_on_event_page?: boolean
+          show_on_homepage?: boolean
           status?: Database["public"]["Enums"]["sponsor_status"]
+          tier?: string
           website?: string | null
         }
         Update: {
           address?: string | null
           committed_amount?: number | null
           created_at?: string
+          display_order?: number
           expected_amount?: number | null
           id?: string
           name?: string
@@ -1220,7 +1229,10 @@ export type Database = {
           notes?: string | null
           org_id?: string
           owner_profile_id?: string | null
+          show_on_event_page?: boolean
+          show_on_homepage?: boolean
           status?: Database["public"]["Enums"]["sponsor_status"]
+          tier?: string
           website?: string | null
         }
         Relationships: [
