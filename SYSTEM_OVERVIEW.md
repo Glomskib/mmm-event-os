@@ -65,6 +65,7 @@ Browser → Next.js (Vercel) → Supabase (DB + Auth + Storage)
 | `referral_credits` | Credit records linking registrations to referrers |
 | `referral_rewards` | Milestone tier unlocks |
 | `system_logs` | Cron execution and email send logs |
+| `approvals` | Content approval queue (emails, social posts) |
 
 **Views:** `referral_leaderboard_v` — aggregated referral rankings
 
@@ -74,7 +75,7 @@ Browser → Next.js (Vercel) → Supabase (DB + Auth + Storage)
 
 | Route | Schedule | Purpose |
 |-------|----------|---------|
-| `/api/cron/weekly-ride-email` | Mondays 1pm UTC | Send weekly ride schedule to opted-in members |
+| `/api/cron/weekly-ride-email` | Mondays 1pm UTC | Send weekly ride schedule (or create draft if approval mode) |
 | `/api/cron/referral-weekly-email` | Mondays midnight UTC | Send personalized referral stats + run milestone check |
 | `/api/cron/referral-milestones` | On-demand / manual | Check and award referral milestone tiers + raffle tickets |
 
@@ -104,6 +105,7 @@ curl -s -X POST 'http://localhost:3001/api/cron/weekly-ride-email?test=true' \
 | `CRON_SECRET` | Yes | Bearer token for cron route auth |
 | `NEXT_PUBLIC_APP_URL` | Yes | App base URL (e.g., `http://localhost:3001`) |
 | `WELCOME_EMAIL_ENABLED` | No | Set to `false` to disable welcome emails |
+| `WEEKLY_RIDE_EMAIL_APPROVAL_MODE` | No | Set to `true` to create drafts instead of sending immediately |
 
 ---
 
@@ -126,6 +128,7 @@ Migrations must be applied sequentially:
 00012_event_day_flags.sql
 00013_profile_welcome_email_sent.sql
 00014_system_logs.sql
+00015_approval_queue.sql
 ```
 
 **Apply all:** `supabase db reset` (local) or apply individually via Supabase dashboard.
@@ -185,6 +188,7 @@ Migrations must be applied sequentially:
 | Raffles | `/admin/raffles` | Raffle pools by source (referral/main) |
 | Analytics | `/admin/analytics` | Revenue, registrations, conversion metrics |
 | Event Day | `/admin/event-day` | Day-of operations command center |
+| Approvals | `/admin/approvals` | Review + approve emails before sending |
 | Email | `/admin/email` | Weekly ride email controls |
 | Exports | `/admin/exports` | CSV + ZIP downloads |
 | System | `/admin/system` | Health checks, env status, execution logs |

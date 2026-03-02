@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Mail,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -78,6 +79,13 @@ const adminCards = [
     icon: ClipboardList,
     href: "/admin/event-day",
     color: "text-red-600",
+  },
+  {
+    title: "Approvals",
+    description: "Review and approve emails and content.",
+    icon: ShieldCheck,
+    href: "/admin/approvals",
+    color: "text-yellow-600",
   },
   {
     title: "Email",

@@ -12,8 +12,89 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      approvals: {
+        Row: {
+          approved_by: string | null
+          body_html: string | null
+          body_json: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string
+          rejected_by: string | null
+          reviewer_notes: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          body_html?: string | null
+          body_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id: string
+          rejected_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          body_html?: string | null
+          body_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string
+          rejected_by?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkins: {
         Row: {
           approved: boolean
@@ -754,6 +835,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],

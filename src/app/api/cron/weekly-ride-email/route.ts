@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getFromAddress, sendEmail } from "@/lib/resend";
 import { createLogger, writeSystemLog } from "@/lib/logger";
+import type { Json } from "@/lib/database.types";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,113 @@ const DIFFICULTY_COLORS: Record<string, { bg: string; text: string }> = {
   hard: { bg: "#fee2e2", text: "#991b1b" },
 };
 
+interface RideForEmail {
+  date: string;
+  dayName: string;
+  time: string;
+  title: string;
+  difficulty: string;
+  meet_location: string | null;
+  notes: string | null;
+  route_ridewithgps_url: string | null;
+  route_strava_url: string | null;
+  route_wahoo_url: string | null;
+}
+
+function buildRideEmailHtml(rides: RideForEmail[], siteUrl: string): string {
+  // Group by date
+  const grouped = new Map<string, RideForEmail[]>();
+  for (const ride of rides) {
+    const existing = grouped.get(ride.date) ?? [];
+    existing.push(ride);
+    grouped.set(ride.date, existing);
+  }
+
+  let ridesHtml = "";
+
+  for (const [date, dateRides] of grouped) {
+    const dateObj = new Date(date + "T00:00:00");
+    const dateLabel = dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+
+    ridesHtml += `
+      <div style="margin-bottom:24px;">
+        <h3 style="margin:0 0 12px 0;font-size:18px;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">
+          ${dateLabel}
+        </h3>`;
+
+    for (const ride of dateRides) {
+      const diffColors = DIFFICULTY_COLORS[ride.difficulty] ?? {
+        bg: "#f3f4f6",
+        text: "#374151",
+      };
+
+      const [h, m] = ride.time.split(":");
+      const hour = parseInt(h, 10);
+      const ampm = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour % 12 || 12;
+      const timeStr = `${displayHour}:${m} ${ampm}`;
+
+      let routeButtons = "";
+      if (ride.route_ridewithgps_url) {
+        routeButtons += `<a href="${ride.route_ridewithgps_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">RideWithGPS</a>`;
+      }
+      if (ride.route_strava_url) {
+        routeButtons += `<a href="${ride.route_strava_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#fc4c02;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">Strava</a>`;
+      }
+      if (ride.route_wahoo_url) {
+        routeButtons += `<a href="${ride.route_wahoo_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#00b2ff;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">Wahoo</a>`;
+      }
+
+      ridesHtml += `
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:16px;font-weight:600;color:#111827;">${ride.title}</span>
+            <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;background:${diffColors.bg};color:${diffColors.text};">
+              ${ride.difficulty}
+            </span>
+          </div>
+          <p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">
+            ${timeStr}
+          </p>
+          ${ride.meet_location ? `<p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">Meet: ${ride.meet_location}</p>` : ""}
+          ${ride.notes ? `<p style="margin:0 0 4px 0;font-size:14px;color:#6b7280;font-style:italic;">${ride.notes}</p>` : ""}
+          ${routeButtons ? `<div>${routeButtons}</div>` : ""}
+        </div>`;
+    }
+
+    ridesHtml += `</div>`;
+  }
+
+  return `
+    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:32px 24px;text-align:center;border-radius:8px 8px 0 0;">
+        <h1 style="margin:0;color:#fff;font-size:24px;">This Week's Rides</h1>
+        <p style="margin:8px 0 0;color:#bfdbfe;font-size:14px;">Making Miles Matter</p>
+      </div>
+
+      <div style="padding:24px;background:#fff;">
+        ${ridesHtml}
+
+        <div style="margin-top:32px;text-align:center;border-top:1px solid #e5e7eb;padding-top:24px;">
+          <a href="${siteUrl}/rides" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">View All Rides</a>
+          <a href="${siteUrl}/checkin" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">Check In</a>
+          <a href="${siteUrl}/events" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">Invite a Friend</a>
+        </div>
+      </div>
+
+      <div style="padding:16px 24px;background:#f3f4f6;text-align:center;border-radius:0 0 8px 8px;">
+        <p style="margin:0;font-size:12px;color:#6b7280;">
+          Making Miles Matter &middot; <a href="${siteUrl}" style="color:#2563eb;">makingmilesmatter.org</a>
+        </p>
+      </div>
+    </div>
+  `;
+}
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -31,6 +139,8 @@ export async function POST(request: NextRequest) {
 
   const timer = log.timed("execute");
   const testMode = request.nextUrl.searchParams.get("test") === "true";
+  const approvalMode =
+    process.env.WEEKLY_RIDE_EMAIL_APPROVAL_MODE === "true";
 
   const admin = createAdminClient();
   const siteUrl =
@@ -71,19 +181,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Compute final values (occurrence overrides series)
-  interface RideForEmail {
-    date: string;
-    dayName: string;
-    time: string;
-    title: string;
-    difficulty: string;
-    meet_location: string | null;
-    notes: string | null;
-    route_ridewithgps_url: string | null;
-    route_strava_url: string | null;
-    route_wahoo_url: string | null;
-  }
-
   const rides: RideForEmail[] = rideList.map((occ) => {
     const series = occ.ride_series as {
       title: string;
@@ -115,102 +212,56 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  // Group by date
-  const grouped = new Map<string, RideForEmail[]>();
-  for (const ride of rides) {
-    const existing = grouped.get(ride.date) ?? [];
-    existing.push(ride);
-    grouped.set(ride.date, existing);
-  }
+  const emailHtml = buildRideEmailHtml(rides, siteUrl);
+  const emailSubject = "This Week's Ride Schedule — Making Miles Matter";
 
-  // Build HTML
-  let ridesHtml = "";
-
-  for (const [date, dateRides] of grouped) {
-    const dateObj = new Date(date + "T00:00:00");
-    const dateLabel = dateObj.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
+  // --- APPROVAL MODE: save as draft instead of sending ---
+  if (approvalMode && !testMode) {
+    const weekLabel = today.toLocaleDateString("en-US", {
+      month: "short",
       day: "numeric",
+      year: "numeric",
     });
 
-    ridesHtml += `
-      <div style="margin-bottom:24px;">
-        <h3 style="margin:0 0 12px 0;font-size:18px;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">
-          ${dateLabel}
-        </h3>`;
+    const { data: draft, error: draftError } = await admin
+      .from("approvals")
+      .insert({
+        org_id: org.id,
+        type: "weekly_ride_email",
+        status: "draft",
+        title: `${emailSubject} (${weekLabel})`,
+        body_json: { rides, rideCount: rides.length } as unknown as Json,
+        body_html: emailHtml,
+        created_by: null, // system-generated
+      })
+      .select("id")
+      .single();
 
-    for (const ride of dateRides) {
-      const diffColors = DIFFICULTY_COLORS[ride.difficulty] ?? {
-        bg: "#f3f4f6",
-        text: "#374151",
-      };
+    const durationMs = timer.end({ mode: "approval_draft", rideCount: rides.length });
 
-      // Format time (HH:MM -> readable)
-      const [h, m] = ride.time.split(":");
-      const hour = parseInt(h, 10);
-      const ampm = hour >= 12 ? "PM" : "AM";
-      const displayHour = hour % 12 || 12;
-      const timeStr = `${displayHour}:${m} ${ampm}`;
-
-      // Route buttons
-      let routeButtons = "";
-      if (ride.route_ridewithgps_url) {
-        routeButtons += `<a href="${ride.route_ridewithgps_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">RideWithGPS</a>`;
-      }
-      if (ride.route_strava_url) {
-        routeButtons += `<a href="${ride.route_strava_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#fc4c02;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">Strava</a>`;
-      }
-      if (ride.route_wahoo_url) {
-        routeButtons += `<a href="${ride.route_wahoo_url}" style="display:inline-block;margin-right:8px;margin-top:8px;padding:6px 12px;background:#00b2ff;color:#fff;text-decoration:none;border-radius:4px;font-size:13px;">Wahoo</a>`;
-      }
-
-      ridesHtml += `
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <span style="font-size:16px;font-weight:600;color:#111827;">${ride.title}</span>
-            <span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500;background:${diffColors.bg};color:${diffColors.text};">
-              ${ride.difficulty}
-            </span>
-          </div>
-          <p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">
-            ${timeStr}
-          </p>
-          ${ride.meet_location ? `<p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">Meet: ${ride.meet_location}</p>` : ""}
-          ${ride.notes ? `<p style="margin:0 0 4px 0;font-size:14px;color:#6b7280;font-style:italic;">${ride.notes}</p>` : ""}
-          ${routeButtons ? `<div>${routeButtons}</div>` : ""}
-        </div>`;
+    if (draftError) {
+      writeSystemLog("cron:weekly-ride-email", "Failed to create approval draft", {
+        error: draftError.message,
+        durationMs,
+      });
+      return NextResponse.json({ error: draftError.message }, { status: 500 });
     }
 
-    ridesHtml += `</div>`;
+    writeSystemLog("cron:weekly-ride-email", "Created approval draft", {
+      approvalId: draft.id,
+      rideCount: rides.length,
+      durationMs,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      mode: "approval_draft",
+      approvalId: draft.id,
+      rideCount: rides.length,
+    });
   }
 
-  const emailHtml = `
-    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:32px 24px;text-align:center;border-radius:8px 8px 0 0;">
-        <h1 style="margin:0;color:#fff;font-size:24px;">This Week's Rides</h1>
-        <p style="margin:8px 0 0;color:#bfdbfe;font-size:14px;">Making Miles Matter</p>
-      </div>
-
-      <div style="padding:24px;background:#fff;">
-        ${ridesHtml}
-
-        <div style="margin-top:32px;text-align:center;border-top:1px solid #e5e7eb;padding-top:24px;">
-          <a href="${siteUrl}/rides" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">View All Rides</a>
-          <a href="${siteUrl}/checkin" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">Check In</a>
-          <a href="${siteUrl}/events" style="display:inline-block;margin:0 8px 8px;padding:10px 20px;background:#059669;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:500;">Invite a Friend</a>
-        </div>
-      </div>
-
-      <div style="padding:16px 24px;background:#f3f4f6;text-align:center;border-radius:0 0 8px 8px;">
-        <p style="margin:0;font-size:12px;color:#6b7280;">
-          Making Miles Matter &middot; <a href="${siteUrl}" style="color:#2563eb;">makingmilesmatter.org</a>
-        </p>
-      </div>
-    </div>
-  `;
-
-  // Fetch recipients
+  // --- DIRECT SEND MODE ---
   let recipients: { email: string }[];
 
   if (testMode) {
@@ -233,7 +284,6 @@ export async function POST(request: NextRequest) {
     recipients = profiles ?? [];
   }
 
-  // Send emails sequentially
   let sent = 0;
   const errors: string[] = [];
 
@@ -242,7 +292,7 @@ export async function POST(request: NextRequest) {
       {
         from: getFromAddress(),
         to: recipient.email,
-        subject: "This Week's Ride Schedule — Making Miles Matter",
+        subject: emailSubject,
         html: emailHtml,
       },
       "weekly-ride"
