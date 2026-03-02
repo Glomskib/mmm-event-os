@@ -18,6 +18,7 @@ import {
   Mail,
   Activity,
   ShieldCheck,
+  Share2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -79,6 +80,13 @@ const adminCards = [
     icon: ClipboardList,
     href: "/admin/event-day",
     color: "text-red-600",
+  },
+  {
+    title: "Social",
+    description: "Create social post drafts for approval.",
+    icon: Share2,
+    href: "/admin/social",
+    color: "text-fuchsia-600",
   },
   {
     title: "Approvals",
