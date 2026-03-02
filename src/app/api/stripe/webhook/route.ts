@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWaiverEmail } from "@/lib/resend";
+import { applyEarlyBonusForRegistration } from "@/lib/incentives";
 import Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -153,6 +154,11 @@ export async function POST(request: Request) {
         } catch (emailErr) {
           console.error("Failed to send waiver email (paid):", emailErr);
         }
+
+        // Apply early-bird bonus (idempotent, fire-and-forget)
+        applyEarlyBonusForRegistration(existing.id).catch((err) =>
+          console.error("[webhook] applyEarlyBonus failed:", err)
+        );
 
         console.log(
           `Registration updated to paid: ${existing.id}, session=${session.id}`

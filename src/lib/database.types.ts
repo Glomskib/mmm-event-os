@@ -595,6 +595,7 @@ export type Database = {
           bib_issued: boolean
           created_at: string
           distance: string
+          early_merch_perk: string[]
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -624,6 +625,7 @@ export type Database = {
           bib_issued?: boolean
           created_at?: string
           distance: string
+          early_merch_perk?: string[]
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -653,6 +655,7 @@ export type Database = {
           bib_issued?: boolean
           created_at?: string
           distance?: string
+          early_merch_perk?: string[]
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1013,7 +1016,7 @@ export type Database = {
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
-      raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event"
+      raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event" | "early_bonus"
       registration_status:
         | "pending"
         | "paid"
@@ -1161,7 +1164,7 @@ export const Constants = {
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
-      raffle_entry_source: ["shop_ride", "referral", "bonus", "event"],
+      raffle_entry_source: ["shop_ride", "referral", "bonus", "event", "early_bonus"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
       sponsor_interaction_type: ["email", "call", "meeting", "text"],

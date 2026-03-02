@@ -9,6 +9,7 @@ import {
 } from "@/content/waiver/mmm_waiver_2026_v1";
 import { generateWaiverPdf } from "@/lib/waiver-pdf";
 import { sendWaiverEmail } from "@/lib/resend";
+import { applyEarlyBonusForRegistration } from "@/lib/incentives";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -171,6 +172,13 @@ export async function POST(request: Request) {
     } catch (emailErr) {
       console.error("Failed to send waiver email (free):", emailErr);
     }
+  }
+
+  // Apply early-bird bonus for free registrations (idempotent, fire-and-forget)
+  if (isFree) {
+    applyEarlyBonusForRegistration(reg.id).catch((err) =>
+      console.error("[waiver] applyEarlyBonus failed:", err)
+    );
   }
 
   return NextResponse.json({

@@ -25,6 +25,7 @@ export interface Participant {
   emergency_flag: boolean;
   raffle_referral: number;
   raffle_main: number;
+  early_merch_perk: string[];
 }
 
 function useDebounce(value: string, delay: number) {
@@ -78,6 +79,7 @@ export function EventDayClient({
       "Raffle (Main)",
       "Bib Issued",
       "Emergency Flag",
+      "Early Merch Perks",
     ];
     const rows = filtered.map((p) => [
       p.participant_name,
@@ -92,6 +94,7 @@ export function EventDayClient({
       String(p.raffle_main),
       p.bib_issued ? "Yes" : "No",
       p.emergency_flag ? "Yes" : "No",
+      p.early_merch_perk.join("; "),
     ]);
 
     const csv = [header, ...rows]
@@ -149,6 +152,7 @@ export function EventDayClient({
                   <th className="px-3 py-3 text-right font-medium">
                     Raffle Tickets
                   </th>
+                  <th className="px-3 py-3 text-left font-medium">Perks</th>
                   <th className="px-3 py-3 text-center font-medium">Bib</th>
                   <th className="px-3 py-3 text-center font-medium">Flag</th>
                 </tr>
@@ -241,6 +245,19 @@ function ParticipantRow({ participant: p }: { participant: Participant }) {
         <span title="Referral tickets">{p.raffle_referral}</span>
         {" + "}
         <span title="Main tickets">{p.raffle_main}</span>
+      </td>
+      <td className="px-3 py-3">
+        {p.early_merch_perk.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {p.early_merch_perk.map((perk) => (
+              <Badge key={perk} variant="outline" className="text-xs border-amber-500 text-amber-700">
+                {perk}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-xs">\u2014</span>
+        )}
       </td>
       <td className="px-3 py-3 text-center">
         <button

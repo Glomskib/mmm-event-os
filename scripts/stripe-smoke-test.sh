@@ -715,6 +715,226 @@ else
 fi
 
 # ============================================================
+# Test I1: HHH early bonus — before deadline → 5 main tickets + socks perk
+# ============================================================
+printf "\n${BOLD}[I1] HHH early bonus — before deadline (backdated created_at)${NC}\n"
+# Insert registration with created_at explicitly before the HHH deadline (2026-06-01T03:59:59Z)
+# We insert with a backdated timestamp so applyEarlyBonusForRegistration sees it as in-window.
+REG_I1_ID=$(sb_insert "registrations" "$(cat <<EOF
+{
+  "org_id": "${MMM_ORG_ID}",
+  "event_id": "${HHH_EVENT_ID}",
+  "user_id": null,
+  "distance": "62 miles",
+  "amount": 6499,
+  "status": "paid",
+  "waiver_accepted": true,
+  "waiver_accepted_at": "2026-01-15T12:00:00.000Z",
+  "waiver_ip": "127.0.0.1",
+  "waiver_user_agent": "smoke-test/1.0",
+  "waiver_version": "2026-v1",
+  "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Early HHH Rider",
+  "participant_email": "hhhearly@test.com",
+  "emergency_contact_name": "HHH EC",
+  "emergency_contact_phone": "555-000-HHH",
+  "created_at": "2026-01-15T12:00:00.000Z"
+}
+EOF
+)" | jq -r '.[0].id // empty')
+CLEANUP_REG_IDS+=("$REG_I1_ID")
+
+if [ -n "$REG_I1_ID" ]; then
+  # Directly invoke the incentive engine via the internal test helper endpoint
+  INCENTIVE_URL="http://localhost:3001/api/test/apply-early-bonus"
+  I1_RESP=$(curl -s -w "\n%{http_code}" -X POST "$INCENTIVE_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${CRON_SECRET:-}" \
+    -d "{\"registration_id\": \"${REG_I1_ID}\"}")
+  I1_HTTP=$(echo "$I1_RESP" | tail -1)
+
+  if [ "$I1_HTTP" = "200" ]; then
+    sleep 0.5
+    # Check raffle entries: source_id=early_bonus:{REG_I1_ID}
+    I1_SOURCE_ID="early_bonus:${REG_I1_ID}"
+    I1_ENTRY=$(sb_query "raffle_entries" "select=tickets_count,source&source_id=eq.${I1_SOURCE_ID}" | jq '.[0]')
+    I1_TICKETS=$(echo "$I1_ENTRY" | jq -r '.tickets_count // 0')
+    I1_SOURCE=$(echo "$I1_ENTRY" | jq -r '.source // empty')
+
+    # Check merch perk on registration
+    I1_PERK=$(sb_query "registrations" "select=early_merch_perk&id=eq.${REG_I1_ID}" | jq -r '.[0].early_merch_perk // []')
+    I1_HAS_SOCKS=$(echo "$I1_PERK" | jq -r 'map(select(. == "hhh_socks_2026")) | length')
+
+    I1_OK=true
+    if [ "$I1_SOURCE" != "early_bonus" ] || [ "$I1_TICKETS" = "0" ]; then
+      fail "I1: HHH early bonus — raffle entry" "source=${I1_SOURCE}, tickets=${I1_TICKETS}"
+      I1_OK=false
+    fi
+    if [ "$I1_HAS_SOCKS" != "1" ]; then
+      fail "I1: HHH early bonus — socks perk" "early_merch_perk=${I1_PERK}"
+      I1_OK=false
+    fi
+    if [ "$I1_OK" = "true" ]; then
+      pass "I1: HHH early bonus — ${I1_TICKETS} bonus tickets + socks perk"
+    fi
+
+    # ============================================================
+    # Test I2: Idempotency — rerun early bonus, no duplicate entries
+    # ============================================================
+    printf "\n${BOLD}[I2] Early bonus idempotency — rerun doesn't add more tickets${NC}\n"
+    curl -s -o /dev/null -X POST "$INCENTIVE_URL" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${CRON_SECRET:-}" \
+      -d "{\"registration_id\": \"${REG_I1_ID}\"}"
+    sleep 0.3
+    curl -s -o /dev/null -X POST "$INCENTIVE_URL" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${CRON_SECRET:-}" \
+      -d "{\"registration_id\": \"${REG_I1_ID}\"}"
+    sleep 0.5
+
+    I2_COUNT=$(sb_query "raffle_entries" "select=id&source_id=eq.${I1_SOURCE_ID}" | jq 'length')
+    I2_PERK=$(sb_query "registrations" "select=early_merch_perk&id=eq.${REG_I1_ID}" | jq -r '.[0].early_merch_perk // []')
+    I2_SOCKS_COUNT=$(echo "$I2_PERK" | jq -r 'map(select(. == "hhh_socks_2026")) | length')
+
+    if [ "$I2_COUNT" = "1" ] && [ "$I2_SOCKS_COUNT" = "1" ]; then
+      pass "I2: Early bonus idempotent — still 1 entry, 1 socks perk after 3 runs"
+    else
+      fail "I2: Early bonus idempotency" "entries=${I2_COUNT}, socks_count=${I2_SOCKS_COUNT}"
+    fi
+  else
+    fail "I1: HHH early bonus" "test helper returned HTTP ${I1_HTTP}"
+    printf "  ${YELLOW}Note: ensure CRON_SECRET is set in .env.local and dev server is running${NC}\n"
+  fi
+else
+  fail "I1: Setup" "failed to insert HHH registration"
+fi
+
+# ============================================================
+# Test I3: FFF early bonus — before deadline → +1 main ticket
+# ============================================================
+printf "\n${BOLD}[I3] FFF early bonus — before deadline${NC}\n"
+if [ -n "$FFF_EVENT" ]; then
+  REG_I3_ID=$(sb_insert "registrations" "$(cat <<EOF
+{
+  "org_id": "${MMM_ORG_ID}",
+  "event_id": "${FFF_EVENT}",
+  "user_id": null,
+  "distance": "50 miles",
+  "amount": 3500,
+  "status": "paid",
+  "waiver_accepted": true,
+  "waiver_accepted_at": "2026-01-10T08:00:00.000Z",
+  "waiver_ip": "127.0.0.1",
+  "waiver_user_agent": "smoke-test/1.0",
+  "waiver_version": "2026-v1",
+  "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Early FFF Rider",
+  "participant_email": "fffearly@test.com",
+  "emergency_contact_name": "FFF EC",
+  "emergency_contact_phone": "555-000-FFF",
+  "created_at": "2026-01-10T08:00:00.000Z"
+}
+EOF
+)" | jq -r '.[0].id // empty')
+  CLEANUP_REG_IDS+=("$REG_I3_ID")
+
+  if [ -n "$REG_I3_ID" ]; then
+    INCENTIVE_URL="http://localhost:3001/api/test/apply-early-bonus"
+    I3_RESP=$(curl -s -w "\n%{http_code}" -X POST "$INCENTIVE_URL" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${CRON_SECRET:-}" \
+      -d "{\"registration_id\": \"${REG_I3_ID}\"}")
+    I3_HTTP=$(echo "$I3_RESP" | tail -1)
+
+    if [ "$I3_HTTP" = "200" ]; then
+      sleep 0.5
+      I3_SOURCE_ID="early_bonus:${REG_I3_ID}"
+      I3_ENTRY=$(sb_query "raffle_entries" "select=tickets_count,source&source_id=eq.${I3_SOURCE_ID}" | jq '.[0]')
+      I3_TICKETS=$(echo "$I3_ENTRY" | jq -r '.tickets_count // 0')
+      I3_SOURCE=$(echo "$I3_ENTRY" | jq -r '.source // empty')
+
+      # FFF should have no merch perk
+      I3_PERK=$(sb_query "registrations" "select=early_merch_perk&id=eq.${REG_I3_ID}" | jq -r '.[0].early_merch_perk // []')
+      I3_PERK_COUNT=$(echo "$I3_PERK" | jq 'length')
+
+      I3_OK=true
+      if [ "$I3_SOURCE" != "early_bonus" ] || [ "$I3_TICKETS" = "0" ]; then
+        fail "I3: FFF early bonus — raffle entry" "source=${I3_SOURCE}, tickets=${I3_TICKETS}"
+        I3_OK=false
+      fi
+      if [ "$I3_PERK_COUNT" != "0" ]; then
+        fail "I3: FFF early bonus — no merch perk expected" "early_merch_perk=${I3_PERK}"
+        I3_OK=false
+      fi
+      if [ "$I3_OK" = "true" ]; then
+        pass "I3: FFF early bonus — ${I3_TICKETS} bonus ticket(s), no merch perk"
+      fi
+    else
+      fail "I3: FFF early bonus" "test helper returned HTTP ${I3_HTTP}"
+    fi
+  else
+    fail "I3: Setup" "failed to insert FFF registration"
+  fi
+else
+  fail "I3: FFF early bonus" "FFF event not found"
+fi
+
+# ============================================================
+# Test I4: HHH after deadline — no bonus
+# ============================================================
+printf "\n${BOLD}[I4] HHH after deadline — no early bonus${NC}\n"
+# created_at after 2026-06-01T03:59:59Z
+REG_I4_ID=$(sb_insert "registrations" "$(cat <<EOF
+{
+  "org_id": "${MMM_ORG_ID}",
+  "event_id": "${HHH_EVENT_ID}",
+  "user_id": null,
+  "distance": "30 miles",
+  "amount": 4899,
+  "status": "paid",
+  "waiver_accepted": true,
+  "waiver_accepted_at": "2026-07-01T12:00:00.000Z",
+  "waiver_ip": "127.0.0.1",
+  "waiver_user_agent": "smoke-test/1.0",
+  "waiver_version": "2026-v1",
+  "waiver_text_hash": "dbfb5e75819beb734c99a112afcca00d402fceff1c921f0c7adb977fb8c7f2be",
+  "waiver_snapshot_text": "smoke-test waiver snapshot",
+  "participant_name": "Late HHH Rider",
+  "participant_email": "hhhlate@test.com",
+  "emergency_contact_name": "Late EC",
+  "emergency_contact_phone": "555-000-LATE",
+  "created_at": "2026-07-01T12:00:00.000Z"
+}
+EOF
+)" | jq -r '.[0].id // empty')
+CLEANUP_REG_IDS+=("$REG_I4_ID")
+
+if [ -n "$REG_I4_ID" ]; then
+  INCENTIVE_URL="http://localhost:3001/api/test/apply-early-bonus"
+  curl -s -o /dev/null -X POST "$INCENTIVE_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${CRON_SECRET:-}" \
+    -d "{\"registration_id\": \"${REG_I4_ID}\"}"
+  sleep 0.5
+
+  I4_SOURCE_ID="early_bonus:${REG_I4_ID}"
+  I4_COUNT=$(sb_query "raffle_entries" "select=id&source_id=eq.${I4_SOURCE_ID}" | jq 'length')
+  I4_PERK=$(sb_query "registrations" "select=early_merch_perk&id=eq.${REG_I4_ID}" | jq -r '.[0].early_merch_perk // []')
+  I4_PERK_COUNT=$(echo "$I4_PERK" | jq 'length')
+
+  if [ "$I4_COUNT" = "0" ] && [ "$I4_PERK_COUNT" = "0" ]; then
+    pass "I4: HHH after deadline — no bonus tickets, no perk"
+  else
+    fail "I4: HHH deadline guard" "entries=${I4_COUNT}, perks=${I4_PERK}"
+  fi
+else
+  fail "I4: Setup" "failed to insert late HHH registration"
+fi
+
+# ============================================================
 # Cleanup
 # ============================================================
 printf "\n${BOLD}Cleaning up smoke-test data…${NC}\n"
