@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle2, Loader2 } from "lucide-react";
+import { Camera, CheckCircle2, Loader2, MapPin } from "lucide-react";
 
 interface Ride {
   id: string;
@@ -36,6 +36,7 @@ export function CheckinForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -96,6 +97,7 @@ export function CheckinForm({
       const formData = new FormData();
       formData.set("rideOccurrenceId", selectedRide);
       formData.set("photoPath", photoPath);
+      formData.set("locationConfirmed", locationConfirmed ? "true" : "false");
       await submitAction(formData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Check-in failed");
@@ -232,7 +234,30 @@ export function CheckinForm({
         </div>
       )}
 
-      {/* Step 3: Submit */}
+      {/* Step 3: Confirm Location */}
+      {photoPath && (
+        <div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50">
+            <input
+              type="checkbox"
+              checked={locationConfirmed}
+              onChange={(e) => setLocationConfirmed(e.target.checked)}
+              className="mt-0.5 h-5 w-5 rounded"
+            />
+            <div>
+              <div className="flex items-center gap-1.5 font-medium">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+                I confirm I was at the ride location
+              </div>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Optional — helps verify your check-in
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
+
+      {/* Step 4: Submit */}
       {photoPath && (
         <Button
           className="w-full"

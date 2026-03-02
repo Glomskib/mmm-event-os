@@ -119,6 +119,7 @@ export type Database = {
           created_at: string
           event_id: string | null
           id: string
+          location_confirmed: boolean
           org_id: string
           photo_path: string | null
           ride_occurrence_id: string | null
@@ -129,6 +130,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          location_confirmed?: boolean
           org_id: string
           photo_path?: string | null
           ride_occurrence_id?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          location_confirmed?: boolean
           org_id?: string
           photo_path?: string | null
           ride_occurrence_id?: string | null
@@ -173,6 +176,7 @@ export type Database = {
           created_at: string
           date: string
           description: string | null
+          early_bird_deadline: string | null
           id: string
           image_url: string | null
           location: string | null
@@ -184,6 +188,7 @@ export type Database = {
           created_at?: string
           date: string
           description?: string | null
+          early_bird_deadline?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -195,6 +200,7 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string | null
+          early_bird_deadline?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -205,6 +211,148 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      film_votes: {
+        Row: {
+          created_at: string
+          film_id: string
+          id: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          film_id: string
+          id?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          film_id?: string
+          id?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_votes_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "film_votes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "film_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      films: {
+        Row: {
+          active: boolean
+          added_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          org_id: string
+          poster_url: string | null
+          title: string
+          trailer_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          org_id: string
+          poster_url?: string | null
+          title: string
+          trailer_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          org_id?: string
+          poster_url?: string | null
+          title?: string
+          trailer_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "films_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "films_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_winner_history: {
+        Row: {
+          announced_at: string | null
+          created_at: string
+          film_id: string
+          id: string
+          month: string
+          org_id: string
+          vote_count: number
+        }
+        Insert: {
+          announced_at?: string | null
+          created_at?: string
+          film_id: string
+          id?: string
+          month: string
+          org_id: string
+          vote_count?: number
+        }
+        Update: {
+          announced_at?: string | null
+          created_at?: string
+          film_id?: string
+          id?: string
+          month?: string
+          org_id?: string
+          vote_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_winner_history_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_winner_history_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "orgs"

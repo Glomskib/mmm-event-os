@@ -6,8 +6,12 @@ import { Download } from "lucide-react";
 
 export function ExportRaffleClient({
   action,
+  label = "Export Raffle CSV",
+  filename = "raffle-entries",
 }: {
   action: () => Promise<string>;
+  label?: string;
+  filename?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +23,7 @@ export function ExportRaffleClient({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `raffle-entries-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -32,7 +36,7 @@ export function ExportRaffleClient({
   return (
     <Button variant="outline" onClick={handleClick} disabled={loading}>
       <Download className="mr-2 h-4 w-4" />
-      {loading ? "Exporting..." : "Export Raffle CSV"}
+      {loading ? "Exporting..." : label}
     </Button>
   );
 }

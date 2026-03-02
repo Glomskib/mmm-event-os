@@ -53,6 +53,7 @@ export default async function CheckinPage() {
 
     const rideOccurrenceId = formData.get("rideOccurrenceId") as string;
     const photoPath = formData.get("photoPath") as string;
+    const locationConfirmed = formData.get("locationConfirmed") === "true";
 
     if (!rideOccurrenceId || !photoPath) {
       throw new Error("Missing required fields");
@@ -68,6 +69,7 @@ export default async function CheckinPage() {
       user_id: currentProfile.id,
       ride_occurrence_id: rideOccurrenceId,
       photo_path: photoPath,
+      location_confirmed: locationConfirmed,
     });
 
     if (error) {

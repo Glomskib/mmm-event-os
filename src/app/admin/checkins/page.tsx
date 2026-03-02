@@ -1,6 +1,7 @@
 import { Hero } from "@/components/layout/hero";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
+import { writeSystemLog } from "@/lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModerationClient } from "./moderation-client";
 import { ExportRaffleClient } from "./export-raffle-client";
@@ -37,13 +38,19 @@ async function approveCheckin(formData: FormData) {
 
   if (updateError) throw new Error(updateError.message);
 
-  // Create raffle entry
+  await writeSystemLog("checkin:approved", `Checkin ${id} approved`, {
+    checkinId: id,
+    userId: checkin.user_id,
+  });
+
+  // Create raffle entry (idempotent via unique checkin_id constraint)
   const { error: raffleError } = await admin
     .from("raffle_entries")
     .insert({
       org_id: checkin.org_id,
       user_id: checkin.user_id,
       source: "shop_ride",
+      source_id: `shop_ride:${id}`,
       checkin_id: id,
       tickets_count: 1,
       note: "Approved shop ride check-in",
@@ -51,6 +58,14 @@ async function approveCheckin(formData: FormData) {
 
   if (raffleError && raffleError.code !== "23505") {
     throw new Error(raffleError.message);
+  }
+
+  if (!raffleError) {
+    await writeSystemLog("raffle:entry_created", `Raffle ticket for checkin ${id}`, {
+      checkinId: id,
+      userId: checkin.user_id,
+      source: "shop_ride",
+    });
   }
 }
 
@@ -118,19 +133,29 @@ async function bulkApprove(formData: FormData) {
     .update({ approved: true })
     .in("id", checkins.map((c) => c.id));
 
-  // Insert raffle entries for each
-  const entries = checkins.map((c) => ({
-    org_id: c.org_id,
-    user_id: c.user_id,
-    source: "shop_ride" as const,
-    checkin_id: c.id,
-    tickets_count: 1,
-    note: "Approved shop ride check-in (bulk)",
-  }));
+  await writeSystemLog("checkin:approved", `Bulk approved ${checkins.length} checkins`, {
+    checkinIds: checkins.map((c) => c.id),
+  });
 
-  // Insert one at a time to handle unique constraint gracefully
-  for (const entry of entries) {
-    await admin.from("raffle_entries").insert(entry);
+  // Insert raffle entries for each (one at a time for unique constraint handling)
+  for (const c of checkins) {
+    const { error: raffleError } = await admin.from("raffle_entries").insert({
+      org_id: c.org_id,
+      user_id: c.user_id,
+      source: "shop_ride" as const,
+      source_id: `shop_ride:${c.id}`,
+      checkin_id: c.id,
+      tickets_count: 1,
+      note: "Approved shop ride check-in (bulk)",
+    });
+
+    if (!raffleError) {
+      await writeSystemLog("raffle:entry_created", `Raffle ticket for checkin ${c.id}`, {
+        checkinId: c.id,
+        userId: c.user_id,
+        source: "shop_ride",
+      });
+    }
   }
 }
 
@@ -174,6 +199,68 @@ async function exportRaffleCsv() {
     .join("\n");
 }
 
+async function exportCheckinsCsv() {
+  "use server";
+
+  const org = await getCurrentOrg();
+  if (!org) throw new Error("Org not found");
+
+  const admin = createAdminClient();
+
+  const { data: checkins } = await admin
+    .from("checkins")
+    .select("*")
+    .eq("org_id", org.id)
+    .eq("approved", true)
+    .order("created_at", { ascending: false });
+
+  const checkinsList = checkins ?? [];
+
+  // Profiles
+  const userIds = [...new Set(checkinsList.map((c) => c.user_id))];
+  const { data: profiles } = userIds.length > 0
+    ? await admin.from("profiles").select("id, full_name, email").in("id", userIds)
+    : { data: [] };
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  // Ride occurrences
+  const rideOccIds = [...new Set(checkinsList.map((c) => c.ride_occurrence_id).filter(Boolean))] as string[];
+  const { data: rideOccs } = rideOccIds.length > 0
+    ? await admin.from("ride_occurrences").select("id, date, ride_series(title)").in("id", rideOccIds)
+    : { data: [] };
+  const rideMap = new Map((rideOccs ?? []).map((r) => [r.id, r]));
+
+  // Signed photo URLs
+  const photoUrls = new Map<string, string>();
+  for (const c of checkinsList) {
+    if (c.photo_path) {
+      const { data } = await admin.storage.from("checkins").createSignedUrl(c.photo_path, 3600);
+      if (data?.signedUrl) photoUrls.set(c.id, data.signedUrl);
+    }
+  }
+
+  const header = ["User Name", "Email", "Ride", "Ride Date", "Location Confirmed", "Photo URL", "Checked In At"];
+  const rows = checkinsList.map((c) => {
+    const profile = profileMap.get(c.user_id);
+    const ride = c.ride_occurrence_id ? rideMap.get(c.ride_occurrence_id) : null;
+    return [
+      profile?.full_name ?? "",
+      profile?.email ?? "",
+      ride?.ride_series?.title ?? "",
+      ride?.date ?? "",
+      c.location_confirmed ? "Yes" : "No",
+      photoUrls.get(c.id) ?? "",
+      new Date(c.created_at).toLocaleDateString(),
+    ];
+  });
+
+  return [header, ...rows]
+    .map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+    )
+    .join("\n");
+}
+
 export default async function AdminCheckinsPage() {
   const org = await getCurrentOrg();
   if (!org) return <p>Org not found</p>;
@@ -203,6 +290,13 @@ export default async function AdminCheckinsPage() {
     : { data: [] };
   const rideMap = new Map((rideOccs ?? []).map((r) => [r.id, r]));
 
+  // Fetch raffle entries linked to checkins to show "Ticket Created" indicator
+  const checkinIds = checkinsList.map((c) => c.id);
+  const { data: raffleEntries } = checkinIds.length > 0
+    ? await admin.from("raffle_entries").select("checkin_id").in("checkin_id", checkinIds)
+    : { data: [] };
+  const ticketCheckinIds = new Set((raffleEntries ?? []).map((r) => r.checkin_id));
+
   // Generate signed URLs for photos
   async function getSignedUrl(path: string | null) {
     if (!path) return null;
@@ -222,6 +316,8 @@ export default async function AdminCheckinsPage() {
       userEmail: profile?.email ?? "",
       rideName: ride?.ride_series?.title ?? "Ride",
       rideDate: ride?.date ?? "",
+      hasTicket: ticketCheckinIds.has(c.id),
+      locationConfirmed: c.location_confirmed,
     };
   }
 
@@ -238,9 +334,9 @@ export default async function AdminCheckinsPage() {
       <Hero title="Check-in Moderation" subtitle="Review rider photos and approve raffle entries" />
 
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div />
-          <ExportRaffleClient action={exportRaffleCsv} />
+        <div className="mb-6 flex items-center justify-end gap-3">
+          <ExportRaffleClient action={exportCheckinsCsv} label="Export Checkins CSV" filename="approved-checkins" />
+          <ExportRaffleClient action={exportRaffleCsv} label="Export Raffle CSV" filename="raffle-entries" />
         </div>
 
         <Tabs defaultValue="pending">

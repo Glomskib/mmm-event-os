@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { CheckCircle2, X, Loader2, Image as ImageIcon, Ticket, MapPin } from "lucide-react";
 
 interface CheckinItem {
   id: string;
@@ -19,6 +19,8 @@ interface CheckinItem {
   userEmail: string;
   rideName: string;
   rideDate: string;
+  hasTicket?: boolean;
+  locationConfirmed?: boolean;
 }
 
 export function ModerationClient({
@@ -178,9 +180,33 @@ export function ModerationClient({
                   </p>
                 </div>
                 {mode === "approved" && (
-                  <Badge variant="default">Approved</Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    {checkin.hasTicket ? (
+                      <Badge variant="default" className="gap-1">
+                        <Ticket className="h-3 w-3" />
+                        Ticket Created
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Approved</Badge>
+                    )}
+                    {checkin.locationConfirmed && (
+                      <Badge variant="outline" className="gap-1 text-emerald-700 border-emerald-200 bg-emerald-50">
+                        <MapPin className="h-3 w-3" />
+                        Location
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
+
+              {mode === "pending" && checkin.locationConfirmed && (
+                <div className="mt-2">
+                  <Badge variant="outline" className="gap-1 text-emerald-700 border-emerald-200 bg-emerald-50">
+                    <MapPin className="h-3 w-3" />
+                    Location Confirmed
+                  </Badge>
+                </div>
+              )}
 
               {mode === "pending" && (
                 <div className="mt-3 flex gap-2">
