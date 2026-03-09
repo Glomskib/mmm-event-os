@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { HhhLegacyClient } from "./hhh-legacy-client";
 import Link from "next/link";
 
-export const metadata = { title: "HHH Legacy Miles | MMM Event OS" };
+export const metadata = { title: "HHH Legacy Miles" };
 
 export default async function HhhLegacyPage() {
   const supabase = await createClient();

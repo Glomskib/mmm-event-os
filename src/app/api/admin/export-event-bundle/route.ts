@@ -29,7 +29,7 @@ export async function POST() {
   const { data: registrations } = await admin
     .from("registrations")
     .select(
-      "participant_name, participant_email, distance, status, amount, referral_code, created_at, event_id, early_merch_perk"
+      "participant_name, participant_email, distance, status, amount, referral_code, created_at, event_id"
     )
     .eq("org_id", org.id)
     .in("status", ["pending", "paid", "free"])
@@ -54,7 +54,7 @@ export async function POST() {
       r.amount != null ? (r.amount / 100).toFixed(2) : "0.00",
       r.referral_code ?? "",
       r.created_at,
-      ((r.early_merch_perk as string[]) ?? []).join("; "),
+      "",
     ])
   );
 

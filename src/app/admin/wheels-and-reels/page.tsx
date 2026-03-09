@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { FilmsClient } from "./films-client";
 import { addFilm, toggleFilmActive, deleteFilm } from "./actions";
 
-export const metadata = { title: "Wheels & Reels | Admin | MMM Event OS" };
+export const metadata = { title: "Wheels & Reels | Admin" };
 
 export default async function WheelsAndReelsAdminPage() {
   const org = await getCurrentOrg();

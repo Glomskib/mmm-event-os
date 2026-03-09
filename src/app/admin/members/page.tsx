@@ -7,7 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
-export const metadata = { title: "Members | Admin | MMM Event OS" };
+export const metadata = { title: "Members | Admin" };
 
 export default async function AdminMembersPage() {
   const org = await getCurrentOrg();

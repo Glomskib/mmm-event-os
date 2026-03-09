@@ -1,9 +1,9 @@
 import { Hero } from "@/components/layout/hero";
 import { getCurrentOrg } from "@/lib/org";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createUntypedAdminClient as createAdminClient } from "@/lib/supabase/admin";
 import { TemplatesClient } from "./templates-client";
 
-export const metadata = { title: "Sponsor Templates | Admin | MMM Event OS" };
+export const metadata = { title: "Sponsor Templates | Admin" };
 
 export default async function SponsorTemplatesPage() {
   const org = await getCurrentOrg();

@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createUntypedAdminClient } from "@/lib/supabase/admin";
 import { getAdminOrNull } from "@/lib/require-admin";
 import { getCurrentOrg } from "@/lib/org";
 import type { Json } from "@/lib/database.types";
@@ -259,7 +259,8 @@ export async function generateEmailDraftFromTemplate(input: {
   const org = await getCurrentOrg();
   if (!org) return { ok: false, error: "Org not found" };
 
-  const db = createAdminClient();
+  // sponsor_email_templates not in generated types yet — use untyped client
+  const db = createUntypedAdminClient();
 
   const { data: tpl, error: tplErr } = await db
     .from("sponsor_email_templates")
@@ -320,7 +321,7 @@ export async function addTemplate(input: {
   const org = await getCurrentOrg();
   if (!org) return { ok: false, error: "Org not found" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
   const { data, error } = await db
     .from("sponsor_email_templates")
     .insert({
@@ -349,7 +350,7 @@ export async function updateTemplate(
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, error: "Unauthorized" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
   const updateObj: Record<string, unknown> = {};
   if (updates.name !== undefined) updateObj.name = updates.name;
   if (updates.subject !== undefined) updateObj.subject = updates.subject;
@@ -372,7 +373,7 @@ export async function deleteTemplate(
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, error: "Unauthorized" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
   const { error } = await db
     .from("sponsor_email_templates")
     .delete()

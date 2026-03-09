@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle } from "lucide-react";
 import { CopyNotesButton } from "./copy-notes-button";
 
-export const metadata = { title: "Launch Readiness | MMM Event OS" };
+export const metadata = { title: "Launch Readiness" };
 
 interface CheckItem {
   label: string;

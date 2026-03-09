@@ -4,7 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { validateEmbedHtml } from "@/lib/embed-sanitize";
 import { RidesEditorClient } from "./rides-editor-client";
 
-export const metadata = { title: "Rides | Admin | MMM Event OS" };
+export const metadata = { title: "Rides | Admin" };
 
 async function updateSeries(formData: FormData) {
   "use server";

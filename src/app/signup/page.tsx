@@ -51,7 +51,7 @@ export default function SignupPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Create Account</CardTitle>
           <CardDescription>
-            Join MMM Event OS
+            Join Making Miles Matter
           </CardDescription>
         </CardHeader>
         <CardContent>

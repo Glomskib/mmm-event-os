@@ -14,7 +14,7 @@ import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { ReferralShareCard } from "./referral-share-card";
 
-export const metadata = { title: "Registration Confirmed | MMM Event OS" };
+export const metadata = { title: "Registration Confirmed" };
 
 export default async function SuccessPage({
   searchParams,

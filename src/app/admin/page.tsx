@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export const metadata = { title: "Admin | MMM Event OS" };
+export const metadata = { title: "Admin" };
 
 const adminCards = [
   {
@@ -110,11 +110,18 @@ const adminCards = [
     color: "text-yellow-600",
   },
   {
-    title: "Email",
+    title: "Campaigns",
+    description: "Email campaigns, subscribers, and broadcasts.",
+    icon: Mail,
+    href: "/admin/campaigns",
+    color: "text-indigo-600",
+  },
+  {
+    title: "Ride Email",
     description: "Weekly ride email controls.",
     icon: Mail,
     href: "/admin/email",
-    color: "text-indigo-600",
+    color: "text-indigo-500",
   },
   {
     title: "Exports",

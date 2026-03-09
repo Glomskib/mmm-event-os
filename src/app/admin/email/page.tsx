@@ -9,12 +9,12 @@ import {
 import { CheckCircle2, XCircle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const metadata = { title: "Email | Admin | MMM Event OS" };
+export const metadata = { title: "Email | Admin" };
 
 async function sendTestEmail() {
   "use server";
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.com";
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) throw new Error("CRON_SECRET not configured");
@@ -33,7 +33,7 @@ async function sendTestEmail() {
 async function sendLiveEmail() {
   "use server";
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.com";
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) throw new Error("CRON_SECRET not configured");
@@ -52,7 +52,7 @@ async function sendLiveEmail() {
 async function sendDeliveryTest() {
   "use server";
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.com";
   const res = await fetch(`${baseUrl}/api/admin/email/send-test`, {
     method: "POST",
   });

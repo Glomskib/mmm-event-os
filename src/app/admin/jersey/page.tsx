@@ -7,7 +7,7 @@ import {
   type DesignRow,
 } from "./jersey-admin-client";
 
-export const metadata = { title: "Jersey Voting | Admin | MMM Event OS" };
+export const metadata = { title: "Jersey Voting | Admin" };
 
 async function createDesign(
   formData: FormData

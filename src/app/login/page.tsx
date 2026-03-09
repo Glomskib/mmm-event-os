@@ -70,7 +70,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Sign In</CardTitle>
           <CardDescription>
-            Welcome back to MMM Event OS
+            Welcome back to Making Miles Matter
           </CardDescription>
         </CardHeader>
         <CardContent>

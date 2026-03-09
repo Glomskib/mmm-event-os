@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export const metadata = { title: "Exports | Admin | MMM Event OS" };
+export const metadata = { title: "Exports | Admin" };
 
 async function exportEmergencyContactsCsv() {
   "use server";

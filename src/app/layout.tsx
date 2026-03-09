@@ -4,6 +4,8 @@ import "./globals.css";
 import { TopNav } from "@/components/layout/top-nav";
 import { Footer } from "@/components/layout/footer";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgConfig } from "@/lib/org-config";
+import { MilesChat } from "@/components/miles-chat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +17,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const orgConfig = getOrgConfig();
+
 export const metadata: Metadata = {
-  title: "MMM Event OS",
-  description: "Community events, rides, and more — Making Miles Matter",
+  title: {
+    default: orgConfig.name,
+    template: `%s | ${orgConfig.name}`,
+  } as Metadata["title"],
+  description: `A ${orgConfig.nonprofit.type} nonprofit building community through cycling events, group rides, and fundraising in ${orgConfig.location}.`,
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? `https://${orgConfig.domain}`
+  ),
+  openGraph: {
+    type: "website",
+    siteName: orgConfig.name,
+    locale: "en_US",
+  },
 };
 
 export default async function RootLayout({
@@ -53,6 +68,7 @@ export default async function RootLayout({
         <TopNav user={navUser} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <MilesChat />
       </body>
     </html>
   );

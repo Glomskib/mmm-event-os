@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RevenueBreakdownCard } from "./analytics-tables-client";
 
-export const metadata = { title: "Analytics | Admin | MMM Event OS" };
+export const metadata = { title: "Analytics | Admin" };
 
 export const revalidate = 60;
 

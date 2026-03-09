@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle2, Loader2, MapPin } from "lucide-react";
+import { Camera, CheckCircle2, Loader2, MapPin, Share2 } from "lucide-react";
 
 interface Ride {
   id: string;
@@ -30,6 +30,9 @@ export function CheckinForm({
 }) {
   const searchParams = useSearchParams();
   const success = searchParams.get("success") === "true";
+  const checkinId = searchParams.get("checkinId");
+  const rideName = searchParams.get("rideName");
+  const successPhotoPath = searchParams.get("photoPath");
 
   const [selectedRide, setSelectedRide] = useState<string | null>(null);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
@@ -38,6 +41,8 @@ export function CheckinForm({
   const [submitting, setSubmitting] = useState(false);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareBonusClaimed, setShareBonusClaimed] = useState(false);
+  const [claimingBonus, setClaimingBonus] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -105,6 +110,34 @@ export function CheckinForm({
     }
   }
 
+  async function handleFacebookShare() {
+    if (!checkinId) return;
+
+    // Open Facebook share dialog
+    const shareText = `I'm riding the ${rideName ?? "Ride"} ride with Making Miles Matter! \u{1F6B4}`;
+    const shareUrl = window.location.origin;
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+    window.open(fbUrl, "fb-share", "width=600,height=400");
+
+    // Award bonus raffle ticket
+    setClaimingBonus(true);
+    try {
+      const res = await fetch("/api/checkin/fb-share-bonus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkinId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShareBonusClaimed(true);
+      }
+    } catch {
+      // Silently handle — the share still happened
+    } finally {
+      setClaimingBonus(false);
+    }
+  }
+
   if (success) {
     return (
       <Card className="text-center">
@@ -114,6 +147,42 @@ export function CheckinForm({
           <p className="mt-2 text-muted-foreground">
             Your photo is pending admin review. Once approved, you&apos;ll earn a raffle ticket!
           </p>
+
+          {/* Facebook Share Bonus */}
+          {checkinId && !shareBonusClaimed && (
+            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+              <p className="mb-3 text-sm font-medium text-blue-800 dark:text-blue-200">
+                Share on Facebook to earn 1 bonus raffle ticket!
+              </p>
+              <Button
+                onClick={handleFacebookShare}
+                disabled={claimingBonus}
+                className="bg-[#1877F2] text-white hover:bg-[#166FE5]"
+              >
+                {claimingBonus ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Claiming bonus...
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Share on Facebook
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {shareBonusClaimed && (
+            <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
+              <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                <CheckCircle2 className="mr-1 inline h-4 w-4" />
+                Bonus raffle ticket earned! Thanks for sharing!
+              </p>
+            </div>
+          )}
+
           <Button className="mt-6" onClick={() => window.location.href = "/checkin"}>
             Check In to Another Ride
           </Button>
@@ -185,7 +254,10 @@ export function CheckinForm({
       {/* Step 2: Upload Photo */}
       {selectedRide && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold">2. Upload a ride photo</h2>
+          <h2 className="mb-3 text-lg font-semibold">2. Upload a ride photo <span className="text-destructive">*</span></h2>
+          <p className="mb-3 text-sm text-muted-foreground">
+            A photo of you at the ride is required to complete check-in.
+          </p>
           <input
             ref={fileRef}
             type="file"

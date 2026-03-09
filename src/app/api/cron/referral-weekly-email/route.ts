@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       ? `You're ${nextTier.count - count} referral${nextTier.count - count === 1 ? "" : "s"} away from <strong>${nextTier.label}</strong> (${nextTier.reward})!`
       : "You've unlocked every milestone. You're a legend!";
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.com";
     const referralLink = `${siteUrl}/events?ref=${referrer.code}`;
 
     const result = await sendEmail(

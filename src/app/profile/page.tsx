@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Ticket, Bike, CheckCircle2, Clock } from "lucide-react";
 
-export const metadata = { title: "Profile | MMM Event OS" };
+export const metadata = { title: "Profile" };
 
 export default async function ProfilePage() {
   const profile = await getCurrentProfile();

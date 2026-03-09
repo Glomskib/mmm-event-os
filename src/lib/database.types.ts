@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       approvals: {
@@ -167,6 +142,173 @@ export type Database = {
             columns: ["ride_occurrence_id"]
             isOneToOne: false
             referencedRelation: "ride_occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          body_html: string
+          created_at: string
+          id: string
+          preview_text: string | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          tags_filter: string[]
+          total_clicked: number
+          total_opened: number
+          total_sent: number
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          created_at?: string
+          id?: string
+          preview_text?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          tags_filter?: string[]
+          total_clicked?: number
+          total_opened?: number
+          total_sent?: number
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          id?: string
+          preview_text?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          tags_filter?: string[]
+          total_clicked?: number
+          total_opened?: number
+          total_sent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_sends: {
+        Row: {
+          campaign_id: string
+          clicked_at: string | null
+          created_at: string
+          id: string
+          opened_at: string | null
+          sent_at: string | null
+          status: string
+          subscriber_id: string
+        }
+        Insert: {
+          campaign_id: string
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subscriber_id: string
+        }
+        Update: {
+          campaign_id?: string
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subscriber_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "email_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          source: string
+          subscribed_at: string
+          tags: string[]
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          source?: string
+          subscribed_at?: string
+          tags?: string[]
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          source?: string
+          subscribed_at?: string
+          tags?: string[]
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      event_distances: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_active: boolean
+          label: string
+          price_cents: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_active?: boolean
+          label: string
+          price_cents?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          price_cents?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_distances_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -338,99 +480,99 @@ export type Database = {
       }
       hhh_legacy_entries: {
         Row: {
+          created_at: string
           id: string
+          miles: number
+          updated_at: string
           user_id: string
           year: number
-          miles: number
-          created_at: string
-          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
+          miles?: number
+          updated_at?: string
           user_id: string
           year: number
-          miles?: number
-          created_at?: string
-          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
+          miles?: number
+          updated_at?: string
           user_id?: string
           year?: number
-          miles?: number
-          created_at?: string
-          updated_at?: string
         }
         Relationships: []
       }
       hhh_shopify_imports: {
         Row: {
-          id: string
-          org_id: string
-          order_id: string
-          order_name: string | null
-          email: string
-          first_name: string | null
-          last_name: string | null
           distance_label: string | null
-          miles: number
+          email: string
           event_year: number
           financial_status: string | null
+          first_name: string | null
+          id: string
           imported_at: string
-          matched_user_id: string | null
+          last_name: string | null
           matched_at: string | null
+          matched_user_id: string | null
+          miles: number
           notes: string | null
+          order_id: string
+          order_name: string | null
+          org_id: string
           raw_json: Json | null
         }
         Insert: {
-          id?: string
-          org_id: string
-          order_id: string
-          order_name?: string | null
-          email: string
-          first_name?: string | null
-          last_name?: string | null
           distance_label?: string | null
-          miles?: number
+          email: string
           event_year: number
           financial_status?: string | null
+          first_name?: string | null
+          id?: string
           imported_at?: string
-          matched_user_id?: string | null
+          last_name?: string | null
           matched_at?: string | null
+          matched_user_id?: string | null
+          miles?: number
           notes?: string | null
+          order_id: string
+          order_name?: string | null
+          org_id: string
           raw_json?: Json | null
         }
         Update: {
-          id?: string
-          org_id?: string
-          order_id?: string
-          order_name?: string | null
-          email?: string
-          first_name?: string | null
-          last_name?: string | null
           distance_label?: string | null
-          miles?: number
+          email?: string
           event_year?: number
           financial_status?: string | null
+          first_name?: string | null
+          id?: string
           imported_at?: string
-          matched_user_id?: string | null
+          last_name?: string | null
           matched_at?: string | null
+          matched_user_id?: string | null
+          miles?: number
           notes?: string | null
+          order_id?: string
+          order_name?: string | null
+          org_id?: string
           raw_json?: Json | null
         }
         Relationships: [
-          {
-            foreignKeyName: "hhh_shopify_imports_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "orgs"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "hhh_shopify_imports_matched_user_id_fkey"
             columns: ["matched_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hhh_shopify_imports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -530,52 +672,52 @@ export type Database = {
       }
       media_assets: {
         Row: {
-          id: string
-          org_id: string
-          entity_type: Database["public"]["Enums"]["media_entity_type"]
-          entity_id: string
-          kind: Database["public"]["Enums"]["media_kind"]
-          placement: Database["public"]["Enums"]["media_placement"]
-          title: string | null
           caption: string | null
-          url: string
-          thumb_url: string | null
-          sort_order: number
-          is_active: boolean
           created_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["media_entity_type"]
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["media_kind"]
+          org_id: string
+          placement: Database["public"]["Enums"]["media_placement"]
+          sort_order: number
+          thumb_url: string | null
+          title: string | null
           updated_at: string
+          url: string
         }
         Insert: {
-          id?: string
-          org_id: string
-          entity_type: Database["public"]["Enums"]["media_entity_type"]
-          entity_id: string
-          kind: Database["public"]["Enums"]["media_kind"]
-          placement?: Database["public"]["Enums"]["media_placement"]
-          title?: string | null
           caption?: string | null
-          url: string
-          thumb_url?: string | null
-          sort_order?: number
-          is_active?: boolean
           created_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["media_entity_type"]
+          id?: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["media_kind"]
+          org_id: string
+          placement?: Database["public"]["Enums"]["media_placement"]
+          sort_order?: number
+          thumb_url?: string | null
+          title?: string | null
           updated_at?: string
+          url: string
         }
         Update: {
-          id?: string
-          org_id?: string
-          entity_type?: Database["public"]["Enums"]["media_entity_type"]
-          entity_id?: string
-          kind?: Database["public"]["Enums"]["media_kind"]
-          placement?: Database["public"]["Enums"]["media_placement"]
-          title?: string | null
           caption?: string | null
-          url?: string
-          thumb_url?: string | null
-          sort_order?: number
-          is_active?: boolean
           created_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["media_entity_type"]
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["media_kind"]
+          org_id?: string
+          placement?: Database["public"]["Enums"]["media_placement"]
+          sort_order?: number
+          thumb_url?: string | null
+          title?: string | null
           updated_at?: string
+          url?: string
         }
         Relationships: [
           {
@@ -867,7 +1009,6 @@ export type Database = {
           bib_issued: boolean
           created_at: string
           distance: string
-          early_merch_perk: string[]
           email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -897,7 +1038,6 @@ export type Database = {
           bib_issued?: boolean
           created_at?: string
           distance: string
-          early_merch_perk?: string[]
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -927,7 +1067,6 @@ export type Database = {
           bib_issued?: boolean
           created_at?: string
           distance?: string
-          early_merch_perk?: string[]
           email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1252,47 +1391,6 @@ export type Database = {
           },
         ]
       }
-      sponsor_email_templates: {
-        Row: {
-          body_markdown: string
-          created_at: string
-          id: string
-          name: string
-          org_id: string
-          subject: string
-          tags: string[]
-          updated_at: string
-        }
-        Insert: {
-          body_markdown: string
-          created_at?: string
-          id?: string
-          name: string
-          org_id: string
-          subject: string
-          tags?: string[]
-          updated_at?: string
-        }
-        Update: {
-          body_markdown?: string
-          created_at?: string
-          id?: string
-          name?: string
-          org_id?: string
-          subject?: string
-          tags?: string[]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sponsor_email_templates_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "orgs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       system_logs: {
         Row: {
           created_at: string
@@ -1317,19 +1415,46 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       hhh_legacy_leaderboard_v: {
         Row: {
-          user_id: string | null
+          auto_miles: number | null
           display_name: string | null
           email: string | null
-          manual_miles: number | null
-          imported_miles: number | null
-          auto_miles: number | null
           hhh_reg_count: number | null
+          imported_miles: number | null
           last_hhh_year: number | null
+          manual_miles: number | null
           total_hhh_miles: number | null
+          user_id: string | null
         }
         Relationships: []
       }
@@ -1361,7 +1486,12 @@ export type Database = {
     }
     Enums: {
       event_status: "draft" | "published" | "cancelled"
-      media_entity_type: "event" | "ride_series" | "ride_occurrence" | "sponsor" | "page"
+      media_entity_type:
+        | "event"
+        | "ride_series"
+        | "ride_occurrence"
+        | "sponsor"
+        | "page"
       media_kind: "image" | "video" | "embed" | "file"
       media_placement:
         | "hero"
@@ -1377,7 +1507,7 @@ export type Database = {
         | "elevation_chart"
         | "route_embed"
         | "route_gpx"
-      raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event" | "early_bonus"
+      raffle_entry_source: "shop_ride" | "referral" | "bonus" | "event"
       registration_status:
         | "pending"
         | "paid"
@@ -1519,16 +1649,33 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       event_status: ["draft", "published", "cancelled"],
-      media_entity_type: ["event", "ride_series", "ride_occurrence", "sponsor", "page"],
+      media_entity_type: [
+        "event",
+        "ride_series",
+        "ride_occurrence",
+        "sponsor",
+        "page",
+      ],
       media_kind: ["image", "video", "embed", "file"],
-      media_placement: ["hero", "gallery", "section", "banner", "hero_secondary", "route_preview", "testimonial", "inline_section", "background_loop", "sponsor_showcase", "elevation_chart", "route_embed", "route_gpx"],
-      raffle_entry_source: ["shop_ride", "referral", "bonus", "event", "early_bonus"],
+      media_placement: [
+        "hero",
+        "gallery",
+        "section",
+        "banner",
+        "hero_secondary",
+        "route_preview",
+        "testimonial",
+        "inline_section",
+        "background_loop",
+        "sponsor_showcase",
+        "elevation_chart",
+        "route_embed",
+        "route_gpx",
+      ],
+      raffle_entry_source: ["shop_ride", "referral", "bonus", "event"],
       registration_status: ["pending", "paid", "refunded", "cancelled", "free"],
       ride_difficulty: ["easy", "moderate", "hard"],
       sponsor_interaction_type: ["email", "call", "meeting", "text"],

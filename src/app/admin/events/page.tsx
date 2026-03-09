@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EventsClient } from "./events-client";
 import { setEventStatus, createEvent, updateEvent } from "./actions";
 
-export const metadata = { title: "Events | Admin | MMM Event OS" };
+export const metadata = { title: "Events | Admin" };
 
 export default async function AdminEventsPage() {
   const org = await getCurrentOrg();

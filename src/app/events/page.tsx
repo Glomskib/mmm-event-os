@@ -19,7 +19,7 @@ import { EventSocialProof } from "@/components/marketing/event-social-proof";
 import { getMarketingIncentive } from "@/lib/marketing-incentives";
 import { slugify } from "@/lib/event-slug";
 
-export const metadata = { title: "Events | MMM Event OS" };
+export const metadata = { title: "Events" };
 
 export default async function EventsPage() {
   const supabase = await createClient();

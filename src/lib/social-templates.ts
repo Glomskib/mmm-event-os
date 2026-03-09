@@ -22,7 +22,7 @@ export function generateSocialDrafts(input: TemplateInput): GeneratedDraft[] {
   const event = input.eventName || "our next event";
   const date = input.date || "soon";
   const distance = input.distance || "all distances";
-  const regUrl = input.registrationUrl || "makingmilesmatter.org";
+  const regUrl = input.registrationUrl || "makingmilesmatter.com";
   const topic = input.topic || "Making Miles Matter";
 
   return [

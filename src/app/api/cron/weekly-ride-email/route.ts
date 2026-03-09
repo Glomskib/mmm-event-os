@@ -162,7 +162,7 @@ function buildRideEmailHtml(rides: RideForEmail[], siteUrl: string, referral?: R
 
       <div style="padding:16px 24px;background:#f3f4f6;text-align:center;border-radius:0 0 8px 8px;">
         <p style="margin:0;font-size:12px;color:#6b7280;">
-          Making Miles Matter &middot; <a href="${siteUrl}" style="color:#2563eb;">makingmilesmatter.org</a>
+          Making Miles Matter &middot; <a href="${siteUrl}" style="color:#2563eb;">makingmilesmatter.com</a>
         </p>
       </div>
     </div>
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.org";
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://makingmilesmatter.com";
 
   // Get MMM org
   const { data: org } = await admin

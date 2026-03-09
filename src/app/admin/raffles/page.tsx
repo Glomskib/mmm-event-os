@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { RaffleExportClient } from "./raffle-export-client";
 
-export const metadata = { title: "Raffles | Admin | MMM Event OS" };
+export const metadata = { title: "Raffles | Admin" };
 
 async function exportReferralPoolCsv() {
   "use server";

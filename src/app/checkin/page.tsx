@@ -4,7 +4,7 @@ import { getCurrentProfile } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { CheckinForm } from "./checkin-form";
 
-export const metadata = { title: "Check In | MMM Event OS" };
+export const metadata = { title: "Check In" };
 
 export default async function CheckinPage() {
   const profile = await getCurrentProfile();
@@ -56,7 +56,7 @@ export default async function CheckinPage() {
     const locationConfirmed = formData.get("locationConfirmed") === "true";
 
     if (!rideOccurrenceId || !photoPath) {
-      throw new Error("Missing required fields");
+      throw new Error("A photo is required to check in");
     }
 
     const currentProfile = await getCurrentProfile();
@@ -64,13 +64,17 @@ export default async function CheckinPage() {
 
     const supa = await createClient();
 
-    const { error } = await supa.from("checkins").insert({
-      org_id: currentProfile.org_id,
-      user_id: currentProfile.id,
-      ride_occurrence_id: rideOccurrenceId,
-      photo_path: photoPath,
-      location_confirmed: locationConfirmed,
-    });
+    const { data: inserted, error } = await supa
+      .from("checkins")
+      .insert({
+        org_id: currentProfile.org_id,
+        user_id: currentProfile.id,
+        ride_occurrence_id: rideOccurrenceId,
+        photo_path: photoPath,
+        location_confirmed: locationConfirmed,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       if (error.code === "23505") {
@@ -79,7 +83,23 @@ export default async function CheckinPage() {
       throw new Error(error.message);
     }
 
-    redirect("/checkin?success=true");
+    // Look up ride name for the share dialog
+    const { data: occ } = await supa
+      .from("ride_occurrences")
+      .select("ride_series(title)")
+      .eq("id", rideOccurrenceId)
+      .single();
+
+    const rideName = (occ as { ride_series?: { title?: string } | null })?.ride_series?.title ?? "Ride";
+
+    const params = new URLSearchParams({
+      success: "true",
+      checkinId: inserted.id,
+      rideName,
+      photoPath,
+    });
+
+    redirect(`/checkin?${params.toString()}`);
   }
 
   return (

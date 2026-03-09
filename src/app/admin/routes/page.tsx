@@ -4,7 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { validateEmbedHtml } from "@/lib/embed-sanitize";
 import { RoutesEditorClient, type OccurrenceRouteItem } from "./routes-editor-client";
 
-export const metadata = { title: "Route Editor | Admin | MMM Event OS" };
+export const metadata = { title: "Route Editor | Admin" };
 
 async function updateOccurrenceRoute(formData: FormData) {
   "use server";

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModerationClient } from "./moderation-client";
 import { ExportRaffleClient } from "./export-raffle-client";
 
-export const metadata = { title: "Check-ins | Admin | MMM Event OS" };
+export const metadata = { title: "Check-ins | Admin" };
 
 async function approveCheckin(formData: FormData) {
   "use server";

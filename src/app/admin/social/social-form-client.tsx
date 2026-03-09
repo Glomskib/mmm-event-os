@@ -405,7 +405,7 @@ export function SocialFormClient({ orgId }: { orgId: string }) {
                       registrationUrl: e.target.value,
                     }))
                   }
-                  placeholder="makingmilesmatter.org"
+                  placeholder="makingmilesmatter.com"
                   className="mt-1"
                 />
               </div>

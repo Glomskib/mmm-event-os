@@ -21,8 +21,16 @@ const PRICING_RULES: PricingRule[] = [
   },
   {
     pattern: /Findlay Further Fondo/i,
-    defaultPrice: 3500,
-    prices: {},
+    prices: {
+      "62 miles": 3500,
+    },
+  },
+  {
+    pattern: /Wheels .* Reels/i,
+    defaultPrice: 1000,
+    prices: {
+      "General Admission": 1000,
+    },
   },
 ];
 
@@ -59,7 +67,6 @@ export function getDistances(
           .map(([distance, price]) => ({ distance, price }))
           .sort((a, b) => a.price - b.price);
       }
-      // Event with defaultPrice only — no named distances
       return [];
     }
   }

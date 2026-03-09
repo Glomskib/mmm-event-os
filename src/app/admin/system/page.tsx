@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { LateHealthCheck } from "./late-health-client";
 
-export const metadata = { title: "System Health | Admin | MMM Event OS" };
+export const metadata = { title: "System Health | Admin" };
 
 const REQUIRED_ENV_VARS = [
   "STRIPE_SECRET_KEY",

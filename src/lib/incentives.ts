@@ -105,7 +105,7 @@ export async function applyEarlyBonusForRegistration(
     const { error: insertErr } = await admin.from("raffle_entries").insert({
       org_id: reg.org_id,
       user_id: reg.user_id ?? "",
-      source: "early_bonus" as const,
+      source: "bonus" as const,
       source_id: sourceId,
       tickets_count: delta,
       note: `early bonus — ${eventSlug} (target ${config.mainTicketsTarget})`,
@@ -118,25 +118,10 @@ export async function applyEarlyBonusForRegistration(
     }
   }
 
-  // Merch perk — idempotent array append
+  // Merch perk — skipped (early_merch_perk column not yet added to registrations)
   if (config.merchPerk) {
-    // Only update if perk not already present (array contains check)
-    const { data: currentReg } = await admin
-      .from("registrations")
-      .select("early_merch_perk")
-      .eq("id", registrationId)
-      .single();
-
-    const existingPerks: string[] = (currentReg?.early_merch_perk as string[]) ?? [];
-
-    if (!existingPerks.includes(config.merchPerk)) {
-      await admin
-        .from("registrations")
-        .update({
-          early_merch_perk: [...existingPerks, config.merchPerk],
-        })
-        .eq("id", registrationId);
-    }
+    // TODO: Add early_merch_perk column to registrations table, then re-enable
+    void config.merchPerk;
   }
 
   // Log

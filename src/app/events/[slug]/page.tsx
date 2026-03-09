@@ -7,7 +7,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  CheckSquare,
+  PartyPopper,
+  ShieldCheck,
+  Droplets,
+  Wrench,
+  Sun,
+  Smartphone,
+  Smile,
+  Bike,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { slugify } from "@/lib/event-slug";
@@ -72,6 +85,8 @@ export default async function EventDetailPage({
   if (!event) notFound();
 
   const isHHH = event.series_key === "hhh";
+  const isFFF = event.series_key === "fff";
+  const isCyclingEvent = isHHH || isFFF;
   const registrationOpen = event.registration_open ?? true;
   const incentive = getMarketingIncentive(event.title);
   const eventSlug = event.slug ?? slugify(event.title);
@@ -337,6 +352,106 @@ export default async function EventDetailPage({
               </Button>
             </Link>
           </div>
+        )}
+
+        {/* Day-of Timeline / Schedule */}
+        {(isHHH || isFFF) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-5 w-5" style={{ color: "var(--brand-orange)" }} />
+                Day-of Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="relative ml-3 border-l border-border">
+                {(isHHH
+                  ? [
+                      { time: "6:30 AM", label: "Check-in & Packet Pickup" },
+                      { time: "7:30 AM", label: "Ride Start" },
+                      { time: "Ongoing", label: "Rest stops every 15–20 miles" },
+                      { time: "12:00 PM", label: "Finish Line Celebration begins" },
+                      { time: "2:00 PM", label: "Awards & Raffle Drawing" },
+                    ]
+                  : [
+                      { time: "7:00 AM", label: "Check-in & Packet Pickup" },
+                      { time: "8:00 AM", label: "Ride Start" },
+                      { time: "1:00 PM", label: "Finish Line Celebration" },
+                    ]
+                ).map((item, i) => (
+                  <li key={i} className="mb-4 ml-6 last:mb-0">
+                    <span
+                      className="absolute -left-2 flex h-4 w-4 items-center justify-center rounded-full"
+                      style={{ backgroundColor: "var(--brand-orange)" }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </span>
+                    <p className="text-sm font-semibold text-foreground">{item.time}</p>
+                    <p className="text-sm text-muted-foreground">{item.label}</p>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* What to Bring Checklist */}
+        {isCyclingEvent && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CheckSquare className="h-5 w-5" style={{ color: "var(--brand-orange)" }} />
+                What to Bring
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {[
+                  { icon: ShieldCheck, text: "Helmet", note: "required", required: true },
+                  { icon: Droplets, text: "Water bottles", note: null, required: false },
+                  { icon: Bike, text: "Bike in good working condition", note: null, required: false },
+                  { icon: Wrench, text: "Spare tube & pump", note: null, required: false },
+                  { icon: Sun, text: "Sunscreen", note: null, required: false },
+                  { icon: Smartphone, text: "ID and phone", note: null, required: false },
+                  { icon: Smile, text: "Positive attitude", note: null, required: false },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm">
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+                      style={{ backgroundColor: "var(--brand-orange)", color: "#fff" }}
+                    >
+                      <item.icon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="text-foreground">{item.text}</span>
+                    {item.note && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        {item.note}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* After Party */}
+        {(isHHH || isFFF) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <PartyPopper className="h-5 w-5" style={{ color: "var(--brand-orange)" }} />
+                After Party
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {isHHH
+                  ? "Post-Ride Party at False Chord Brewing — Food, drinks, live music, raffle drawing, and award ceremony. All registered riders welcome!"
+                  : "Finish Line Celebration at Arlyn\u2019s Good Beer — Cold brews and good company after 62 miles of gravel."}
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Sponsors */}

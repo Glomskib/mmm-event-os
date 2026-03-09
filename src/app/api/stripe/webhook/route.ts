@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendWaiverEmail } from "@/lib/resend";
+import { sendWaiverEmail, sendEmail, getFromAddress } from "@/lib/resend";
 import { applyEarlyBonusForRegistration } from "@/lib/incentives";
 import Stripe from "stripe";
 
@@ -39,6 +39,72 @@ export async function POST(request: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const meta = session.metadata || {};
+
+      // ── Donation receipt ──────────────────────────────────────────
+      if (meta.type === "donation") {
+        const donorEmail = session.customer_details?.email;
+        const amountCents = session.amount_total || 0;
+        const amountFormatted = `$${(amountCents / 100).toFixed(2)}`;
+        const donationDate = new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        if (donorEmail) {
+          try {
+            await sendEmail(
+              {
+                from: getFromAddress(),
+                to: donorEmail,
+                subject: "Thank You for Your Donation — Making Miles Matter",
+                html: `
+                  <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
+                    <h2>Thank You for Your Generous Donation!</h2>
+                    <p>We received your donation of <strong>${amountFormatted}</strong> on ${donationDate}.</p>
+                    <p>
+                      Your support helps Making Miles Matter provide resources and
+                      programming for families in Hancock County, Ohio. Every dollar
+                      makes a difference — thank you for being part of our mission.
+                    </p>
+
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+
+                    <p style="font-size: 13px; color: #555;">
+                      <strong>Tax Deduction Notice</strong><br/>
+                      Making Miles Matter INC is a 501(c)(3) nonprofit organization
+                      (EIN available upon request). No goods or services were provided
+                      in exchange for this contribution. This email may serve as your
+                      receipt for tax purposes. Please consult your tax advisor for
+                      details on deductibility.
+                    </p>
+
+                    <p style="font-size: 13px; color: #555;">
+                      Questions? Contact us at
+                      <a href="mailto:miles@makingmilesmatter.com">miles@makingmilesmatter.com</a>.
+                    </p>
+
+                    <br/>
+                    <p>With gratitude,<br/>— The Making Miles Matter Team</p>
+                  </div>
+                `,
+              },
+              "donation-receipt"
+            );
+          } catch (emailErr) {
+            console.error("Failed to send donation receipt email:", emailErr);
+          }
+        } else {
+          console.warn(
+            `Donation session ${session.id} has no customer email — skipping receipt`
+          );
+        }
+
+        console.log(
+          `Donation processed: ${amountFormatted}, session=${session.id}`
+        );
+        break;
+      }
 
       // Prefer updating existing registration by registration_id (new flow).
       // Fall back to upsert by stripe_session_id for backward compatibility.

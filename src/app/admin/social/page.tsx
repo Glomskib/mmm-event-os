@@ -2,7 +2,7 @@ import { Hero } from "@/components/layout/hero";
 import { getCurrentOrg } from "@/lib/org";
 import { SocialFormClient } from "./social-form-client";
 
-export const metadata = { title: "Social Drafts | Admin | MMM Event OS" };
+export const metadata = { title: "Social Drafts | Admin" };
 
 export default async function SocialPage() {
   const org = await getCurrentOrg();

@@ -4,7 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { getAllEntityMedia } from "@/lib/media";
 import { MediaClient } from "./media-client";
 
-export const metadata = { title: "Media | Admin | MMM Event OS" };
+export const metadata = { title: "Media | Admin" };
 
 export default async function AdminMediaPage({
   searchParams,

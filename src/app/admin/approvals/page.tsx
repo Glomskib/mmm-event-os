@@ -12,7 +12,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-export const metadata = { title: "Approvals | Admin | MMM Event OS" };
+export const metadata = { title: "Approvals | Admin" };
 
 const STATUS_ORDER = ["draft", "approved", "rejected", "sent"];
 

@@ -1,9 +1,9 @@
 import { Hero } from "@/components/layout/hero";
 import { getCurrentOrg } from "@/lib/org";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createUntypedAdminClient as createAdminClient } from "@/lib/supabase/admin";
 import { SponsorsClient } from "./sponsors-client";
 
-export const metadata = { title: "Sponsors | Admin | MMM Event OS" };
+export const metadata = { title: "Sponsors | Admin" };
 
 /** Pipeline fundraising goal in dollars */
 export const PIPELINE_GOAL_DOLLARS = 10_000;

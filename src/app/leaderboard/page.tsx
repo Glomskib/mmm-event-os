@@ -4,7 +4,7 @@ import { getCurrentOrg } from "@/lib/org";
 import { LeaderboardTable } from "./leaderboard-table";
 import { UserRankCard } from "./user-rank-card";
 
-export const metadata = { title: "Referral Leaderboard | MMM Event OS" };
+export const metadata = { title: "Referral Leaderboard" };
 
 export const revalidate = 60;
 

@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentOrg } from "@/lib/org";
 import { EventDayClient } from "./event-day-client";
 
-export const metadata = { title: "Event Day | Admin | MMM Event OS" };
+export const metadata = { title: "Event Day | Admin" };
 
 export default async function EventDayPage() {
   const org = await getCurrentOrg();
@@ -16,7 +16,7 @@ export default async function EventDayPage() {
     admin
       .from("registrations")
       .select(
-        "id, participant_name, participant_email, distance, status, waiver_accepted, waiver_accepted_at, emergency_contact_name, emergency_contact_phone, referral_code, bib_issued, emergency_flag, user_id, event_id, early_merch_perk"
+        "id, participant_name, participant_email, distance, status, waiver_accepted, waiver_accepted_at, emergency_contact_name, emergency_contact_phone, referral_code, bib_issued, emergency_flag, user_id, event_id"
       )
       .eq("org_id", org.id)
       .in("status", ["paid", "free"])
@@ -65,7 +65,7 @@ export default async function EventDayPage() {
       emergency_flag: r.emergency_flag,
       raffle_referral: tickets.referral,
       raffle_main: tickets.main,
-      early_merch_perk: (r.early_merch_perk as string[]) ?? [],
+      early_merch_perk: [] as string[],
     };
   });
 

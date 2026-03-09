@@ -10,7 +10,7 @@ import {
 import { ReferralExportButton } from "./referral-export-button";
 import { ReferralTableClient } from "./referral-table-client";
 
-export const metadata = { title: "Referrals | Admin | MMM Event OS" };
+export const metadata = { title: "Referrals | Admin" };
 
 async function exportReferralsCsv() {
   "use server";

@@ -99,7 +99,7 @@ export async function sendWelcomeEmail(userId: string): Promise<boolean> {
 
   if (!profile || profile.welcome_email_sent_at) return false;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://makingmilesmatter.org";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://makingmilesmatter.com";
   const firstName = profile.full_name?.split(" ")[0] || "there";
 
   const result = await sendWithRetry(
