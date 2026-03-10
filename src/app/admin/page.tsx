@@ -26,6 +26,8 @@ import {
   FileUp,
   Map,
   Trophy,
+  HandHeart,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -178,6 +180,20 @@ const adminCards = [
     icon: Trophy,
     href: "/admin/jersey",
     color: "text-amber-600",
+  },
+  {
+    title: "Volunteers",
+    description: "View volunteer signups and contact info.",
+    icon: HandHeart,
+    href: "/admin/volunteers",
+    color: "text-rose-500",
+  },
+  {
+    title: "Donations",
+    description: "Track donations and total raised.",
+    icon: Heart,
+    href: "/admin/donations",
+    color: "text-red-500",
   },
 ];
 

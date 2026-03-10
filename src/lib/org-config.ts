@@ -36,7 +36,11 @@ export function getOrgConfig(): OrgConfig {
     location: "Findlay, OH",
     contactEmail: "miles@makingmilesmatter.com",
     nonprofit: { type: "501(c)(3)", ein: null },
-    social: { facebook: null, instagram: null, strava: null },
+    social: {
+      facebook: "https://facebook.com/MakingMilesMatterINC",
+      instagram: "https://instagram.com/makingmilesmatter",
+      strava: "https://strava.com/clubs/makingmilesmatter",
+    },
     branding: {
       primaryColor: "#F5A623",
       navyColor: "#0E2A47",

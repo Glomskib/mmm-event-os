@@ -100,6 +100,25 @@ export async function POST(request: Request) {
           );
         }
 
+        // Insert donation record into the database
+        if (meta.org_id) {
+          try {
+            await supabase.from("donations" as never).insert({
+              org_id: meta.org_id,
+              stripe_session_id: session.id,
+              stripe_payment_intent_id:
+                typeof session.payment_intent === "string"
+                  ? session.payment_intent
+                  : session.payment_intent?.id || null,
+              amount: amountCents,
+              donor_email: donorEmail || null,
+              donor_name: session.customer_details?.name || null,
+            } as never);
+          } catch (dbErr) {
+            console.error("Failed to insert donation record:", dbErr);
+          }
+        }
+
         console.log(
           `Donation processed: ${amountFormatted}, session=${session.id}`
         );

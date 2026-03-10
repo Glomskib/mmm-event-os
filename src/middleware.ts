@@ -9,7 +9,15 @@ const SLUG_REDIRECTS: Record<string, string> = {
 };
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, host } = request.nextUrl;
+
+  // Redirect hancockhorizontalhundred.com → makingmilesmatter.com
+  if (host.includes("hancockhorizontalhundred.com")) {
+    const target = new URL(pathname, "https://makingmilesmatter.com");
+    target.search = request.nextUrl.search;
+    return NextResponse.redirect(target, { status: 301 });
+  }
+
   const redirect = SLUG_REDIRECTS[pathname];
   if (redirect) {
     return NextResponse.redirect(new URL(redirect, request.url), { status: 301 });

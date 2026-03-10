@@ -32,7 +32,21 @@ export const metadata: Metadata = {
     type: "website",
     siteName: orgConfig.name,
     locale: "en_US",
+    description: `${orgConfig.nonprofit.type} nonprofit building community through cycling in ${orgConfig.location}. Free weekly rides, gravel events, and fundraisers.`,
   },
+  twitter: {
+    card: "summary_large_image",
+  },
+  keywords: [
+    "Making Miles Matter",
+    "cycling",
+    "Findlay Ohio",
+    "nonprofit",
+    "gravel riding",
+    "community rides",
+    "Hancock Horizontal Hundred",
+    "bike events",
+  ],
 };
 
 export default async function RootLayout({

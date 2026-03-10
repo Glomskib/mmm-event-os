@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { getCurrentOrg } from "@/lib/org";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +21,11 @@ export async function POST(req: NextRequest) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const org = await getCurrentOrg();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      metadata: { type: "donation" },
+      metadata: { type: "donation", org_id: org?.id ?? "" },
       line_items: [
         {
           price_data: {

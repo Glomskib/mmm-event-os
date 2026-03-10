@@ -125,6 +125,7 @@ export default async function RidesPage() {
       .from("checkins")
       .select("photo_path, created_at, ride_occurrences(ride_series(title)), profiles(full_name)")
       .eq("org_id", org.id)
+      .eq("approved", true)
       .not("photo_path", "is", null)
       .gte("created_at", sixtyDaysAgo.toISOString())
       .order("created_at", { ascending: false })

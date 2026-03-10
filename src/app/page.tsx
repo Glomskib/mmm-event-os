@@ -23,6 +23,17 @@ import { getHomepageSponsors } from "@/lib/media";
 import { SponsorsSection } from "@/components/event/sponsors-section";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { slugify } from "@/lib/event-slug";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  description:
+    "Making Miles Matter is a 501(c)(3) nonprofit in Findlay, Ohio building community through cycling. Free weekly rides, gravel events like the Hancock Horizontal Hundred, and fundraisers — every mile matters.",
+  openGraph: {
+    title: "Making Miles Matter — Every Mile Matters",
+    description:
+      "501(c)(3) nonprofit building community through cycling in Northwest Ohio. Free weekly rides, gravel events, and fundraisers.",
+  },
+};
 
 export default async function HomePage() {
   const supabase = await createClient();
