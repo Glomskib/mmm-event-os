@@ -48,6 +48,16 @@ interface EventRow {
   registration_open: boolean;
   capacity: number | null;
   series_key: string;
+  event_type: string | null;
+  fundraising_goal: number | null;
+  rider_goal: number | null;
+  sponsor_goal: number | null;
+  volunteer_goal: number | null;
+  weather_notes: string | null;
+  post_event_notes: string | null;
+  venue_details: string | null;
+  elevation_gain: number | null;
+  terrain_type: string | null;
 }
 
 const STATUS_COLORS: Record<EventStatus, string> = {
@@ -93,6 +103,16 @@ export function EventsClient({
   const [editDescription, setEditDescription] = useState("");
   const [editRegOpen, setEditRegOpen] = useState(true);
   const [editCapacity, setEditCapacity] = useState("");
+  const [editEventType, setEditEventType] = useState("");
+  const [editFundraisingGoal, setEditFundraisingGoal] = useState("");
+  const [editRiderGoal, setEditRiderGoal] = useState("");
+  const [editSponsorGoal, setEditSponsorGoal] = useState("");
+  const [editVolunteerGoal, setEditVolunteerGoal] = useState("");
+  const [editWeatherNotes, setEditWeatherNotes] = useState("");
+  const [editPostEventNotes, setEditPostEventNotes] = useState("");
+  const [editVenueDetails, setEditVenueDetails] = useState("");
+  const [editElevationGain, setEditElevationGain] = useState("");
+  const [editTerrainType, setEditTerrainType] = useState("");
 
   function clearResult() {
     setTimeout(() => setResult(null), 4000);
@@ -106,6 +126,16 @@ export function EventsClient({
     setEditDescription(event.description ?? "");
     setEditRegOpen(event.registration_open);
     setEditCapacity(event.capacity ? String(event.capacity) : "");
+    setEditEventType(event.event_type ?? "ride");
+    setEditFundraisingGoal(event.fundraising_goal ? String(event.fundraising_goal) : "");
+    setEditRiderGoal(event.rider_goal ? String(event.rider_goal) : "");
+    setEditSponsorGoal(event.sponsor_goal ? String(event.sponsor_goal) : "");
+    setEditVolunteerGoal(event.volunteer_goal ? String(event.volunteer_goal) : "");
+    setEditWeatherNotes(event.weather_notes ?? "");
+    setEditPostEventNotes(event.post_event_notes ?? "");
+    setEditVenueDetails(event.venue_details ?? "");
+    setEditElevationGain(event.elevation_gain ? String(event.elevation_gain) : "");
+    setEditTerrainType(event.terrain_type ?? "");
     setDrawerOpen(true);
   }
 
@@ -160,6 +190,16 @@ export function EventsClient({
         date: editDate ? new Date(editDate).toISOString() : undefined,
         registrationOpen: editRegOpen,
         capacity: editCapacity ? parseInt(editCapacity) : null,
+        eventType: editEventType || undefined,
+        fundraisingGoal: editFundraisingGoal ? parseInt(editFundraisingGoal) : null,
+        riderGoal: editRiderGoal ? parseInt(editRiderGoal) : null,
+        sponsorGoal: editSponsorGoal ? parseInt(editSponsorGoal) : null,
+        volunteerGoal: editVolunteerGoal ? parseInt(editVolunteerGoal) : null,
+        weatherNotes: editWeatherNotes.trim() || undefined,
+        postEventNotes: editPostEventNotes.trim() || undefined,
+        venueDetails: editVenueDetails.trim() || undefined,
+        elevationGain: editElevationGain ? parseInt(editElevationGain) : null,
+        terrainType: editTerrainType || undefined,
       });
       if (res.ok) {
         setDrawerOpen(false);
@@ -458,6 +498,124 @@ export function EventsClient({
                   />
                   Registration open
                 </label>
+
+                <div className="border-t pt-4 mt-2">
+                  <p className="text-sm font-medium mb-3">Event Type & Details</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label>Event Type</Label>
+                      <select
+                        value={editEventType}
+                        onChange={(e) => setEditEventType(e.target.value)}
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        <option value="ride">Ride</option>
+                        <option value="gravel">Gravel Event</option>
+                        <option value="fundraiser">Fundraiser</option>
+                        <option value="social">Social / Community</option>
+                        <option value="race">Race</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Terrain Type</Label>
+                      <select
+                        value={editTerrainType}
+                        onChange={(e) => setEditTerrainType(e.target.value)}
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      >
+                        <option value="">Not set</option>
+                        <option value="road">Road</option>
+                        <option value="gravel">Gravel</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="trail">Trail</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Elevation Gain (ft)</Label>
+                      <Input
+                        type="number"
+                        value={editElevationGain}
+                        onChange={(e) => setEditElevationGain(e.target.value)}
+                        placeholder="e.g., 3500"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label>Venue Details</Label>
+                      <Textarea
+                        value={editVenueDetails}
+                        onChange={(e) => setEditVenueDetails(e.target.value)}
+                        rows={2}
+                        placeholder="Parking info, address, check-in location..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <p className="text-sm font-medium mb-3">Goals</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label>Rider Goal</Label>
+                      <Input
+                        type="number"
+                        value={editRiderGoal}
+                        onChange={(e) => setEditRiderGoal(e.target.value)}
+                        placeholder="e.g., 400"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Fundraising Goal ($)</Label>
+                      <Input
+                        type="number"
+                        value={editFundraisingGoal}
+                        onChange={(e) => setEditFundraisingGoal(e.target.value)}
+                        placeholder="e.g., 25000"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Sponsor Goal</Label>
+                      <Input
+                        type="number"
+                        value={editSponsorGoal}
+                        onChange={(e) => setEditSponsorGoal(e.target.value)}
+                        placeholder="e.g., 20"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Volunteer Goal</Label>
+                      <Input
+                        type="number"
+                        value={editVolunteerGoal}
+                        onChange={(e) => setEditVolunteerGoal(e.target.value)}
+                        placeholder="e.g., 50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <p className="text-sm font-medium mb-3">Operational Notes</p>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label>Weather Notes</Label>
+                      <Textarea
+                        value={editWeatherNotes}
+                        onChange={(e) => setEditWeatherNotes(e.target.value)}
+                        rows={2}
+                        placeholder="Forecast, contingency plans..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Post-Event Notes</Label>
+                      <Textarea
+                        value={editPostEventNotes}
+                        onChange={(e) => setEditPostEventNotes(e.target.value)}
+                        rows={2}
+                        placeholder="Lessons learned, results, impact..."
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex gap-2 pt-2">
                   <Button

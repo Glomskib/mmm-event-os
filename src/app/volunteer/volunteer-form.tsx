@@ -12,6 +12,9 @@ export function VolunteerForm() {
     name: "",
     email: "",
     phone: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    shirt_size: "",
     message: "",
   });
   const [status, setStatus] = useState<
@@ -118,6 +121,51 @@ export function VolunteerForm() {
               placeholder="(555) 123-4567"
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="vol-ec-name" className="text-sm font-medium">
+                Emergency Contact Name
+              </label>
+              <Input
+                id="vol-ec-name"
+                value={form.emergency_contact_name}
+                onChange={(e) => update("emergency_contact_name", e.target.value)}
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="vol-ec-phone" className="text-sm font-medium">
+                Emergency Contact Phone
+              </label>
+              <Input
+                id="vol-ec-phone"
+                type="tel"
+                value={form.emergency_contact_phone}
+                onChange={(e) => update("emergency_contact_phone", e.target.value)}
+                placeholder="(555) 123-4567"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="vol-shirt" className="text-sm font-medium">
+              T-Shirt Size
+            </label>
+            <select
+              id="vol-shirt"
+              value={form.shirt_size}
+              onChange={(e) => update("shirt_size", e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Select size...</option>
+              <option value="XS">XS</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
           <div className="space-y-1.5">
             <label htmlFor="vol-message" className="text-sm font-medium">
               Anything else? (optional)
@@ -126,7 +174,7 @@ export function VolunteerForm() {
               id="vol-message"
               value={form.message}
               onChange={(e) => update("message", e.target.value)}
-              placeholder="Preferred roles, availability, t-shirt size..."
+              placeholder="Preferred roles, availability..."
               rows={3}
             />
           </div>

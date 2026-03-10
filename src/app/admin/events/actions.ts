@@ -1,6 +1,6 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createUntypedAdminClient } from "@/lib/supabase/admin";
 import { getAdminOrNull } from "@/lib/require-admin";
 import { slugify } from "@/lib/event-slug";
 
@@ -13,7 +13,7 @@ export async function setEventStatus(
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, error: "Unauthorized" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
   const { error } = await db
     .from("events")
     .update({ status })
@@ -34,7 +34,7 @@ export async function createEvent(input: {
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, error: "Unauthorized" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
 
   // Generate slug — ensure uniqueness by appending timestamp if needed
   let slug = slugify(input.title);
@@ -76,12 +76,22 @@ export async function updateEvent(
     date?: string;
     registrationOpen?: boolean;
     capacity?: number | null;
+    eventType?: string;
+    fundraisingGoal?: number | null;
+    riderGoal?: number | null;
+    sponsorGoal?: number | null;
+    volunteerGoal?: number | null;
+    weatherNotes?: string;
+    postEventNotes?: string;
+    venueDetails?: string;
+    elevationGain?: number | null;
+    terrainType?: string;
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const admin = await getAdminOrNull();
   if (!admin) return { ok: false, error: "Unauthorized" };
 
-  const db = createAdminClient();
+  const db = createUntypedAdminClient();
   const updateObj: Record<string, unknown> = {};
   if (updates.title !== undefined) {
     updateObj.title = updates.title;
@@ -95,6 +105,17 @@ export async function updateEvent(
   if (updates.registrationOpen !== undefined)
     updateObj.registration_open = updates.registrationOpen;
   if (updates.capacity !== undefined) updateObj.capacity = updates.capacity;
+  if (updates.eventType !== undefined) updateObj.event_type = updates.eventType;
+  if (updates.fundraisingGoal !== undefined) updateObj.fundraising_goal = updates.fundraisingGoal;
+  if (updates.riderGoal !== undefined) updateObj.rider_goal = updates.riderGoal;
+  if (updates.sponsorGoal !== undefined) updateObj.sponsor_goal = updates.sponsorGoal;
+  if (updates.volunteerGoal !== undefined) updateObj.volunteer_goal = updates.volunteerGoal;
+  if (updates.weatherNotes !== undefined) updateObj.weather_notes = updates.weatherNotes || null;
+  if (updates.postEventNotes !== undefined) updateObj.post_event_notes = updates.postEventNotes || null;
+  if (updates.venueDetails !== undefined) updateObj.venue_details = updates.venueDetails || null;
+  if (updates.elevationGain !== undefined) updateObj.elevation_gain = updates.elevationGain;
+  if (updates.terrainType !== undefined) updateObj.terrain_type = updates.terrainType || null;
+  updateObj.updated_at = new Date().toISOString();
 
   const { error } = await db
     .from("events")

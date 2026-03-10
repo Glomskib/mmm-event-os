@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createUntypedAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, phone, message } = body;
+    const { name, email, phone, message, emergency_contact_name, emergency_contact_phone, shirt_size } = body;
 
     if (!name?.trim() || !email?.trim()) {
       return NextResponse.json(
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = createAdminClient();
+    const db = createUntypedAdminClient();
 
     const emailNorm = email.trim().toLowerCase();
 
@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
         email: emailNorm,
         phone: phone?.trim() || null,
         message: message?.trim() || null,
+        emergency_contact_name: emergency_contact_name?.trim() || null,
+        emergency_contact_phone: emergency_contact_phone?.trim() || null,
+        shirt_size: shirt_size || null,
       },
       { onConflict: "email" }
     );

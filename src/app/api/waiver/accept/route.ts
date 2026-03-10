@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createUntypedAdminClient } from "@/lib/supabase/admin";
 import { getPrice } from "@/lib/pricing";
 import {
   waiverVersion,
@@ -47,6 +47,10 @@ async function handlePost(request: Request, requestId: string) {
     participant_email,
     emergency_contact_name,
     emergency_contact_phone,
+    shirt_size,
+    medical_info,
+    dietary_restrictions,
+    skill_level,
   } = body as {
     event_id?: string;
     distance?: string;
@@ -55,6 +59,10 @@ async function handlePost(request: Request, requestId: string) {
     participant_email?: string;
     emergency_contact_name?: string;
     emergency_contact_phone?: string;
+    shirt_size?: string;
+    medical_info?: string;
+    dietary_restrictions?: string;
+    skill_level?: string;
   };
 
   console.log("[waiver/accept]", requestId, "start", { event_id, distance: distance ?? null });
@@ -121,7 +129,8 @@ async function handlePost(request: Request, requestId: string) {
 
   const admin = createAdminClient();
 
-  const { data: reg, error: regError } = await admin
+  const db = createUntypedAdminClient();
+  const { data: reg, error: regError } = await db
     .from("registrations")
     .insert({
       org_id: event.org_id,
@@ -143,6 +152,10 @@ async function handlePost(request: Request, requestId: string) {
       participant_email: participant_email.trim(),
       emergency_contact_name: emergency_contact_name.trim(),
       emergency_contact_phone: emergency_contact_phone.trim(),
+      shirt_size: shirt_size || null,
+      medical_info: medical_info?.trim() || null,
+      dietary_restrictions: dietary_restrictions?.trim() || null,
+      skill_level: skill_level || null,
     })
     .select("id")
     .single();

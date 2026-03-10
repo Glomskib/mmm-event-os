@@ -446,6 +446,12 @@ function WaiverStep({
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
 
+  // Additional rider info
+  const [shirtSize, setShirtSize] = useState("");
+  const [medicalInfo, setMedicalInfo] = useState("");
+  const [dietaryRestrictions, setDietaryRestrictions] = useState("");
+  const [skillLevel, setSkillLevel] = useState("");
+
   // Referral code — prop takes priority, fallback to cookie
   const [referralCode, setReferralCode] = useState(initialRef);
   useEffect(() => {
@@ -547,6 +553,10 @@ function WaiverStep({
           participant_email: participantEmail.trim(),
           emergency_contact_name: emergencyContactName.trim(),
           emergency_contact_phone: emergencyContactPhone.trim(),
+          shirt_size: shirtSize || undefined,
+          medical_info: medicalInfo.trim() || undefined,
+          dietary_restrictions: dietaryRestrictions.trim() || undefined,
+          skill_level: skillLevel || undefined,
         }),
       });
 
@@ -739,6 +749,89 @@ function WaiverStep({
               show={!!fieldErrors.emergencyContactPhone}
               message={fieldErrors.emergencyContactPhone ?? ""}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Rider details */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium">Rider Details</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label
+              htmlFor="wiz-shirt"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              T-Shirt Size
+            </label>
+            <select
+              id="wiz-shirt"
+              value={shirtSize}
+              onChange={(e) => setShirtSize(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Select size...</option>
+              <option value="XS">XS</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label
+              htmlFor="wiz-skill"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Riding Experience
+            </label>
+            <select
+              id="wiz-skill"
+              value={skillLevel}
+              onChange={(e) => setSkillLevel(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">Select level...</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+              <option value="elite">Elite / Competitive</option>
+            </select>
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label
+              htmlFor="wiz-dietary"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Dietary Restrictions / Allergies
+            </label>
+            <Input
+              id="wiz-dietary"
+              type="text"
+              value={dietaryRestrictions}
+              onChange={(e) => setDietaryRestrictions(e.target.value)}
+              placeholder="e.g., gluten-free, nut allergy (optional)"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label
+              htmlFor="wiz-medical"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Medical Conditions / Notes
+            </label>
+            <Input
+              id="wiz-medical"
+              type="text"
+              value={medicalInfo}
+              onChange={(e) => setMedicalInfo(e.target.value)}
+              placeholder="e.g., asthma, insulin-dependent (optional)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Shared only with event medical staff and SAG support.
+            </p>
           </div>
         </div>
       </div>
