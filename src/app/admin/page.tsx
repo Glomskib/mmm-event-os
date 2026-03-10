@@ -28,12 +28,34 @@ import {
   Trophy,
   HandHeart,
   Heart,
+  LayoutDashboard,
+  LineChart,
+  AlertTriangle,
+  MapPin,
+  Truck,
+  ListChecks,
+  DollarSign,
+  FileCheck,
 } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Admin" };
 
 const adminCards = [
+  {
+    title: "Coordinator Dashboard",
+    description: "Day-of ops, logistics, riders, volunteers.",
+    icon: LayoutDashboard,
+    href: "/admin/coordinator",
+    color: "text-orange-600",
+  },
+  {
+    title: "Executive Dashboard",
+    description: "Revenue, growth, pipeline, impact metrics.",
+    icon: LineChart,
+    href: "/admin/executive",
+    color: "text-green-600",
+  },
   {
     title: "Events",
     description: "Create and manage events.",
@@ -194,6 +216,62 @@ const adminCards = [
     icon: Heart,
     href: "/admin/donations",
     color: "text-red-500",
+  },
+  {
+    title: "Task Board",
+    description: "Track coordinator tasks and deadlines.",
+    icon: ListChecks,
+    href: "/admin/tasks",
+    color: "text-amber-600",
+  },
+  {
+    title: "Incidents",
+    description: "Report and resolve event issues.",
+    icon: AlertTriangle,
+    href: "/admin/incidents",
+    color: "text-red-600",
+  },
+  {
+    title: "Logistics",
+    description: "Event preparation checklist.",
+    icon: ClipboardList,
+    href: "/admin/logistics",
+    color: "text-emerald-600",
+  },
+  {
+    title: "Aid Stations",
+    description: "Manage rest stops and support points.",
+    icon: MapPin,
+    href: "/admin/aid-stations",
+    color: "text-teal-600",
+  },
+  {
+    title: "SAG Vehicles",
+    description: "Support vehicle assignments and status.",
+    icon: Truck,
+    href: "/admin/sag",
+    color: "text-blue-700",
+  },
+  {
+    title: "Volunteer Assignments",
+    description: "Assign shifts and track hours.",
+    icon: HandHeart,
+    href: "/admin/volunteer-assignments",
+    color: "text-rose-600",
+  },
+  {
+    title: "Sponsor Deliverables",
+    description: "Track what you owe sponsors.",
+    icon: FileCheck,
+    href: "/admin/sponsor-deliverables",
+    color: "text-sky-600",
+  },
+  {
+    title: "Financial Summary",
+    description: "Event P&L and expense tracking.",
+    icon: DollarSign,
+    href: "/admin/financial",
+    color: "text-green-700",
   },
 ];
 
